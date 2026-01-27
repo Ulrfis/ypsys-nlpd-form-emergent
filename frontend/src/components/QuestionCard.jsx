@@ -138,10 +138,10 @@ export const QuestionCard = ({
 
           {/* Warning Example */}
           {question.warningExample && (
-            <div className="mb-6 p-4 rounded-lg bg-warning/5 border border-warning/20">
+            <div className="mb-6 p-4 rounded-lg bg-warning/10 border border-warning/30">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-warning-foreground dark:text-warning">
+                <p className="text-sm text-foreground/80">
                   {question.warningExample}
                 </p>
               </div>
