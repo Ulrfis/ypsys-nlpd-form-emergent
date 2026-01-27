@@ -5,20 +5,18 @@ import { LandingPage } from '@/components/LandingPage';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QuestionCard } from '@/components/QuestionCard';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
-import { LoadingScreen } from '@/components/LoadingScreen';
+import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import { generateAnalysis } from '@/lib/openai';
+import { saveSubmission } from '@/lib/supabase';
 
 // Steps in the form flow
 const STEPS = {
   LANDING: 'landing',
   QUESTIONS: 'questions',
   LEAD_CAPTURE: 'lead_capture',
-  LOADING: 'loading',
+  ANALYZING: 'analyzing',
   THANK_YOU: 'thank_you',
 };
 
@@ -31,7 +29,8 @@ export const FormFlow = () => {
   const [priorities, setPriorities] = useState([]);
   const [teaser, setTeaser] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionId, setSubmissionId] = useState(null);
+  const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
+  const [analysisMessage, setAnalysisMessage] = useState('');
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
@@ -67,11 +66,26 @@ export const FormFlow = () => {
     }
   }, [currentQuestionIndex]);
 
-  // Submit the form
+  // Build the answer texts for OpenAI
+  const buildAnswerTexts = useCallback(() => {
+    const answerTexts = {};
+    questions.forEach(question => {
+      const selectedValue = answers[question.id];
+      if (selectedValue) {
+        const selectedOption = question.options.find(opt => opt.value === selectedValue);
+        answerTexts[question.id] = selectedOption ? selectedOption.label : selectedValue;
+      }
+    });
+    return answerTexts;
+  }, [answers]);
+
+  // Submit the form with OpenAI analysis
   const handleSubmit = useCallback(async (formData) => {
     setIsSubmitting(true);
     setUserData(formData);
-    setCurrentStep(STEPS.LOADING);
+    setCurrentStep(STEPS.ANALYZING);
+    setAnalysisStatus('creating_thread');
+    setAnalysisMessage('');
 
     // Calculate score
     const calculatedScore = calculateScore(answers);
@@ -80,60 +94,80 @@ export const FormFlow = () => {
     setScore(calculatedScore);
     setPriorities(topPriorities);
 
-    try {
-      // Submit to backend
-      const response = await axios.post(`${API}/submissions`, {
-        user_email: formData.email,
-        user_first_name: formData.firstName,
-        user_last_name: formData.lastName,
-        company_name: formData.companyName,
-        company_size: formData.companySize || null,
+    // Build payload for OpenAI
+    const payload = {
+      user: {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email || null,
+        company: formData.companyName,
+        size: formData.companySize || null,
         industry: formData.industry || null,
         canton: formData.canton || null,
-        answers: answers,
-        score_raw: calculatedScore.raw,
-        score_normalized: calculatedScore.normalized,
-        risk_level: calculatedScore.riskLevel,
-        consent_marketing: formData.consentMarketing,
-      });
+      },
+      answers: buildAnswerTexts(),
+      score: {
+        value: calculatedScore.raw,
+        normalized: calculatedScore.normalized,
+        level: calculatedScore.riskLevel,
+      },
+      has_email: Boolean(formData.email),
+    };
 
-      setSubmissionId(response.data.id);
-      
-      // Generate teaser based on score and priorities
-      const priorityTexts = topPriorities.slice(0, 3).map((p, i) => `${i + 1}) ${p.question}`).join(' ');
-      const generatedTeaser = `Votre score est de ${calculatedScore.normalized}/10. ${
-        calculatedScore.riskLevel === 'green' 
-          ? 'Vous êtes sur la bonne voie!' 
-          : calculatedScore.riskLevel === 'orange'
-          ? 'Des améliorations sont nécessaires.'
-          : 'Action urgente requise.'
-      } ${topPriorities.length > 0 ? `Vos priorités: ${priorityTexts}.` : ''} Consultez votre email pour le rapport complet.`;
-      
-      setTeaser(generatedTeaser);
+    try {
+      // Status update callback
+      const onStatusUpdate = (status, message) => {
+        setAnalysisStatus(status);
+        setAnalysisMessage(message);
+      };
 
-      // Simulate processing time for better UX
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call OpenAI Assistant
+      const openaiResponse = await generateAnalysis(payload, onStatusUpdate);
+      
+      // Set teaser from OpenAI response
+      setTeaser(openaiResponse.teaser);
+
+      // Save to Supabase
+      try {
+        await saveSubmission(payload, openaiResponse);
+        console.log('Submission saved to Supabase');
+      } catch (supabaseError) {
+        console.error('Error saving to Supabase:', supabaseError);
+        // Continue even if Supabase fails
+      }
+
+      // Small delay to show completion state
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       setCurrentStep(STEPS.THANK_YOU);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error during analysis:', error);
       
-      // Still show results even if backend fails
-      const generatedTeaser = `Votre score est de ${calculatedScore.normalized}/10. ${
+      // Fallback teaser
+      const fallbackTeaser = `Votre score est de ${calculatedScore.normalized}/10. ${
         calculatedScore.riskLevel === 'green' 
           ? 'Vous êtes sur la bonne voie!' 
           : calculatedScore.riskLevel === 'orange'
           ? 'Des améliorations sont nécessaires.'
           : 'Action urgente requise.'
-      }`;
-      setTeaser(generatedTeaser);
+      } Consultez votre email pour le rapport complet.`;
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      setTeaser(fallbackTeaser);
+      setAnalysisStatus('complete');
+      
+      // Try to save anyway
+      try {
+        await saveSubmission(payload, { teaser: fallbackTeaser, lead_temperature: 'WARM' });
+      } catch (e) {
+        console.error('Fallback save failed:', e);
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
       setCurrentStep(STEPS.THANK_YOU);
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers]);
+  }, [answers, buildAnswerTexts]);
 
   // Book consultation
   const handleBookConsultation = useCallback(() => {
@@ -189,8 +223,12 @@ export const FormFlow = () => {
           </div>
         )}
 
-        {currentStep === STEPS.LOADING && (
-          <LoadingScreen key="loading" />
+        {currentStep === STEPS.ANALYZING && (
+          <AnalysisLoadingScreen 
+            key="analyzing"
+            currentStatus={analysisStatus}
+            statusMessage={analysisMessage}
+          />
         )}
 
         {currentStep === STEPS.THANK_YOU && score && (
