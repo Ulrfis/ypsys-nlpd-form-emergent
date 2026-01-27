@@ -12,10 +12,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { swissCantons, companySizes, industries } from '@/data/questionsData';
-import { User, Building2, Mail, MapPin, Users, Briefcase, ArrowRight, Shield } from 'lucide-react';
+import { User, Building2, Mail, MapPin, Users, Briefcase, ArrowRight, Shield, ChevronDown } from 'lucide-react';
 
-export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
+export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -28,6 +33,7 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [showOptional, setShowOptional] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -35,16 +41,10 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
     if (!formData.firstName.trim()) {
       newErrors.firstName = 'Prénom requis';
     }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Nom requis';
-    }
     if (!formData.email.trim()) {
       newErrors.email = 'Email requis';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Email invalide';
-    }
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Nom de l\'entreprise requis';
     }
     if (!formData.consentMarketing) {
       newErrors.consentMarketing = 'Vous devez accepter pour recevoir vos résultats';
@@ -73,30 +73,30 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-2xl mx-auto"
+      className="max-w-xl mx-auto"
     >
       <Card className="border-2 border-border shadow-elegant">
         <CardHeader className="text-center pb-6">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl md:text-3xl font-display">
+          <CardTitle className="text-xl md:text-2xl font-display">
             Recevez votre score et vos 3 priorités
           </CardTitle>
           <CardDescription className="text-base mt-2">
-            La plupart des organisations découvrent leurs failles trop tard, 
-            pendant un audit ou après un incident. Découvrez où vous en êtes vraiment.
+            Entrez vos coordonnées pour recevoir votre rapport personnalisé par email.
           </CardDescription>
         </CardHeader>
         
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name Fields */}
-            <div className="grid md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Required Fields */}
+            <div className="space-y-4">
+              {/* First Name */}
               <div className="space-y-2">
                 <Label htmlFor="firstName" className="flex items-center gap-2">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Prénom *
+                  Prénom <span className="text-danger">*</span>
                 </Label>
                 <Input
                   id="firstName"
@@ -109,131 +109,139 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
                   <p className="text-sm text-danger">{errors.firstName}</p>
                 )}
               </div>
-              
+
+              {/* Email */}
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="flex items-center gap-2">
-                  <User className="w-4 h-4 text-muted-foreground" />
-                  Nom *
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Email professionnel <span className="text-danger">*</span>
                 </Label>
                 <Input
-                  id="lastName"
-                  value={formData.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
-                  placeholder="Dupont"
-                  className={errors.lastName ? 'border-danger' : ''}
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  placeholder="jean.dupont@entreprise.ch"
+                  className={errors.email ? 'border-danger' : ''}
                 />
-                {errors.lastName && (
-                  <p className="text-sm text-danger">{errors.lastName}</p>
+                {errors.email && (
+                  <p className="text-sm text-danger">{errors.email}</p>
                 )}
               </div>
             </div>
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                Email professionnel *
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                placeholder="jean.dupont@entreprise.ch"
-                className={errors.email ? 'border-danger' : ''}
-              />
-              {errors.email && (
-                <p className="text-sm text-danger">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Company Name */}
-            <div className="space-y-2">
-              <Label htmlFor="companyName" className="flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-muted-foreground" />
-                Nom de l'entreprise *
-              </Label>
-              <Input
-                id="companyName"
-                value={formData.companyName}
-                onChange={(e) => handleChange('companyName', e.target.value)}
-                placeholder="Cabinet Médical Lausanne SA"
-                className={errors.companyName ? 'border-danger' : ''}
-              />
-              {errors.companyName && (
-                <p className="text-sm text-danger">{errors.companyName}</p>
-              )}
-            </div>
-
-            {/* Company Size & Industry */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  Taille de l'entreprise
-                </Label>
-                <Select
-                  value={formData.companySize}
-                  onValueChange={(value) => handleChange('companySize', value)}
+            {/* Optional Fields - Collapsible */}
+            <Collapsible open={showOptional} onOpenChange={setShowOptional}>
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full justify-between text-muted-foreground hover:text-foreground"
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {companySizes.map((size) => (
-                      <SelectItem key={size.value} value={size.value}>
-                        {size.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-muted-foreground" />
-                  Secteur d'activité
-                </Label>
-                <Select
-                  value={formData.industry}
-                  onValueChange={(value) => handleChange('industry', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {industries.map((ind) => (
-                      <SelectItem key={ind.value} value={ind.value}>
-                        {ind.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+                  <span className="text-sm">Informations complémentaires (optionnel)</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${showOptional ? 'rotate-180' : ''}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-4">
+                {/* Last Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" />
+                    Nom
+                  </Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleChange('lastName', e.target.value)}
+                    placeholder="Dupont"
+                  />
+                </div>
 
-            {/* Canton */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                Canton
-              </Label>
-              <Select
-                value={formData.canton}
-                onValueChange={(value) => handleChange('canton', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner votre canton" />
-                </SelectTrigger>
-                <SelectContent>
-                  {swissCantons.map((canton) => (
-                    <SelectItem key={canton.value} value={canton.value}>
-                      {canton.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Company Name */}
+                <div className="space-y-2">
+                  <Label htmlFor="companyName" className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                    Nom de l'entreprise
+                  </Label>
+                  <Input
+                    id="companyName"
+                    value={formData.companyName}
+                    onChange={(e) => handleChange('companyName', e.target.value)}
+                    placeholder="Cabinet Médical Lausanne SA"
+                  />
+                </div>
+
+                {/* Company Size & Industry */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground" />
+                      Taille
+                    </Label>
+                    <Select
+                      value={formData.companySize}
+                      onValueChange={(value) => handleChange('companySize', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {companySizes.map((size) => (
+                          <SelectItem key={size.value} value={size.value}>
+                            {size.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Briefcase className="w-4 h-4 text-muted-foreground" />
+                      Secteur
+                    </Label>
+                    <Select
+                      value={formData.industry}
+                      onValueChange={(value) => handleChange('industry', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {industries.map((ind) => (
+                          <SelectItem key={ind.value} value={ind.value}>
+                            {ind.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Canton */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                    Canton
+                  </Label>
+                  <Select
+                    value={formData.canton}
+                    onValueChange={(value) => handleChange('canton', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner votre canton" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {swissCantons.map((canton) => (
+                        <SelectItem key={canton.value} value={canton.value}>
+                          {canton.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Consent */}
             <div className="space-y-3 pt-4 border-t border-border">
@@ -250,7 +258,7 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
                     className="text-sm font-normal cursor-pointer"
                   >
                     J'accepte de recevoir mes résultats et des recommandations pour 
-                    sécuriser ma conformité nLPD. *
+                    sécuriser ma conformité nLPD. <span className="text-danger">*</span>
                   </Label>
                   {errors.consentMarketing && (
                     <p className="text-sm text-danger mt-1">{errors.consentMarketing}</p>
@@ -268,7 +276,7 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
             <Button
               type="submit"
               variant="premium"
-              size="xl"
+              size="lg"
               className="w-full"
               disabled={isLoading}
             >
@@ -279,14 +287,14 @@ export const LeadCaptureForm = ({ onSubmit, isLoading }) => {
                 </>
               ) : (
                 <>
-                  Recevoir mon score
+                  Recevoir mon rapport
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </Button>
 
-            <p className="text-center text-sm text-muted-foreground">
-              Gratuit. Sans engagement.
+            <p className="text-center text-xs text-muted-foreground">
+              Gratuit • Sans engagement • Résultats immédiats
             </p>
           </form>
         </CardContent>
