@@ -112,7 +112,7 @@ export const QuestionCard = ({
                       onClick={() => setShowTooltip(!showTooltip)}
                     >
                       <HelpCircle className="w-4 h-4" />
-                      Pourquoi c'est important?
+                      Pourquoi c&apos;est important?
                     </button>
                   </TooltipTrigger>
                   <TooltipContent 
