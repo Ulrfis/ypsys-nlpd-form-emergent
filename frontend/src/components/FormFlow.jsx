@@ -4,8 +4,9 @@ import { questions, sections, calculateScore, getTopPriorities } from '@/data/qu
 import { LandingPage } from '@/components/LandingPage';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QuestionCard } from '@/components/QuestionCard';
-import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
+import { ResultsPreview } from '@/components/ResultsPreview';
+import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { generateAnalysis } from '@/lib/openai';
@@ -15,8 +16,9 @@ import { saveSubmission } from '@/lib/supabase';
 const STEPS = {
   LANDING: 'landing',
   QUESTIONS: 'questions',
-  LEAD_CAPTURE: 'lead_capture',
   ANALYZING: 'analyzing',
+  RESULTS_PREVIEW: 'results_preview',
+  LEAD_CAPTURE: 'lead_capture',
   THANK_YOU: 'thank_you',
 };
 
@@ -28,6 +30,7 @@ export const FormFlow = () => {
   const [score, setScore] = useState(null);
   const [priorities, setPriorities] = useState([]);
   const [teaser, setTeaser] = useState('');
+  const [openaiResponse, setOpenaiResponse] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
@@ -50,9 +53,6 @@ export const FormFlow = () => {
   const handleNext = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-    } else {
-      // All questions answered, go to lead capture
-      setCurrentStep(STEPS.LEAD_CAPTURE);
     }
   }, [currentQuestionIndex]);
 
@@ -79,10 +79,8 @@ export const FormFlow = () => {
     return answerTexts;
   }, [answers]);
 
-  // Submit the form with OpenAI analysis
-  const handleSubmit = useCallback(async (formData) => {
-    setIsSubmitting(true);
-    setUserData(formData);
+  // Submit answers and run OpenAI analysis
+  const handleSubmitAnswers = useCallback(async () => {
     setCurrentStep(STEPS.ANALYZING);
     setAnalysisStatus('creating_thread');
     setAnalysisMessage('');
@@ -94,16 +92,16 @@ export const FormFlow = () => {
     setScore(calculatedScore);
     setPriorities(topPriorities);
 
-    // Build payload for OpenAI
+    // Build payload for OpenAI (without user data yet)
     const payload = {
       user: {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email || null,
-        company: formData.companyName,
-        size: formData.companySize || null,
-        industry: formData.industry || null,
-        canton: formData.canton || null,
+        first_name: 'Utilisateur',
+        last_name: '',
+        email: null,
+        company: 'Votre organisation',
+        size: null,
+        industry: null,
+        canton: null,
       },
       answers: buildAnswerTexts(),
       score: {
@@ -111,7 +109,7 @@ export const FormFlow = () => {
         normalized: calculatedScore.normalized,
         level: calculatedScore.riskLevel,
       },
-      has_email: Boolean(formData.email),
+      has_email: false,
     };
 
     try {
@@ -122,56 +120,85 @@ export const FormFlow = () => {
       };
 
       // Call OpenAI Assistant
-      const openaiResponse = await generateAnalysis(payload, onStatusUpdate);
+      const response = await generateAnalysis(payload, onStatusUpdate);
       
-      // Set teaser from OpenAI response
-      setTeaser(openaiResponse.teaser);
-
-      // Save to Supabase
-      try {
-        await saveSubmission(payload, openaiResponse);
-        console.log('Submission saved to Supabase');
-      } catch (supabaseError) {
-        console.error('Error saving to Supabase:', supabaseError);
-        // Continue even if Supabase fails
-      }
+      // Store response and teaser
+      setOpenaiResponse(response);
+      setTeaser(response.teaser);
 
       // Small delay to show completion state
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setCurrentStep(STEPS.THANK_YOU);
+      // Go to results preview
+      setCurrentStep(STEPS.RESULTS_PREVIEW);
     } catch (error) {
       console.error('Error during analysis:', error);
       
       // Fallback teaser
-      const fallbackTeaser = `Votre score est de ${calculatedScore.normalized}/10. ${
+      const fallbackTeaser = `Votre score de conformité est de ${calculatedScore.normalized}/10. ${
         calculatedScore.riskLevel === 'green' 
-          ? 'Vous êtes sur la bonne voie!' 
+          ? 'Votre organisation maîtrise les bases de la nLPD.' 
           : calculatedScore.riskLevel === 'orange'
-          ? 'Des améliorations sont nécessaires.'
-          : 'Action urgente requise.'
-      } Consultez votre email pour le rapport complet.`;
+          ? 'Des lacunes ont été identifiées dans votre conformité nLPD.'
+          : 'Des failles critiques nécessitent une action immédiate.'
+      } Recevez votre rapport complet pour découvrir vos priorités d'action.`;
       
       setTeaser(fallbackTeaser);
+      setOpenaiResponse({ teaser: fallbackTeaser, lead_temperature: 'WARM' });
       setAnalysisStatus('complete');
       
-      // Try to save anyway
-      try {
-        await saveSubmission(payload, { teaser: fallbackTeaser, lead_temperature: 'WARM' });
-      } catch (e) {
-        console.error('Fallback save failed:', e);
-      }
-      
       await new Promise(resolve => setTimeout(resolve, 1000));
+      setCurrentStep(STEPS.RESULTS_PREVIEW);
+    }
+  }, [answers, buildAnswerTexts]);
+
+  // Request full report (go to lead capture)
+  const handleRequestReport = useCallback(() => {
+    setCurrentStep(STEPS.LEAD_CAPTURE);
+  }, []);
+
+  // Submit lead capture form
+  const handleSubmitLead = useCallback(async (formData) => {
+    setIsSubmitting(true);
+    setUserData(formData);
+
+    // Build complete payload with user data
+    const payload = {
+      user: {
+        first_name: formData.firstName,
+        last_name: formData.lastName || '',
+        email: formData.email,
+        company: formData.companyName || 'Non renseigné',
+        size: formData.companySize || null,
+        industry: formData.industry || null,
+        canton: formData.canton || null,
+      },
+      answers: buildAnswerTexts(),
+      score: {
+        value: score.raw,
+        normalized: score.normalized,
+        level: score.riskLevel,
+      },
+      has_email: true,
+    };
+
+    try {
+      // Save to Supabase with the previously generated OpenAI response
+      await saveSubmission(payload, openaiResponse);
+      console.log('Submission saved to Supabase');
+      
+      setCurrentStep(STEPS.THANK_YOU);
+    } catch (error) {
+      console.error('Error saving submission:', error);
+      // Still go to thank you page even if save fails
       setCurrentStep(STEPS.THANK_YOU);
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, buildAnswerTexts]);
+  }, [buildAnswerTexts, score, openaiResponse]);
 
   // Book consultation
   const handleBookConsultation = useCallback(() => {
-    // For now, just show an alert. Will be replaced with actual calendar booking
     alert('Fonctionnalité de réservation à venir!');
   }, []);
 
@@ -205,19 +232,9 @@ export const FormFlow = () => {
                 onAnswer={(value) => handleAnswer(currentQuestion.id, value)}
                 onNext={handleNext}
                 onPrevious={handlePrevious}
+                onSubmit={handleSubmitAnswers}
                 isFirst={currentQuestionIndex === 0}
                 isLast={currentQuestionIndex === questions.length - 1}
-              />
-            </div>
-          </div>
-        )}
-
-        {currentStep === STEPS.LEAD_CAPTURE && (
-          <div key="lead-capture" className="min-h-screen bg-gradient-hero py-12">
-            <div className="container mx-auto px-4">
-              <LeadCaptureForm 
-                onSubmit={handleSubmit}
-                isLoading={isSubmitting}
               />
             </div>
           </div>
@@ -229,6 +246,27 @@ export const FormFlow = () => {
             currentStatus={analysisStatus}
             statusMessage={analysisMessage}
           />
+        )}
+
+        {currentStep === STEPS.RESULTS_PREVIEW && score && (
+          <ResultsPreview
+            key="results-preview"
+            score={score}
+            teaser={teaser}
+            onRequestReport={handleRequestReport}
+          />
+        )}
+
+        {currentStep === STEPS.LEAD_CAPTURE && (
+          <div key="lead-capture" className="min-h-screen bg-gradient-hero py-12">
+            <div className="container mx-auto px-4">
+              <LeadCaptureForm 
+                onSubmit={handleSubmitLead}
+                isLoading={isSubmitting}
+                score={score}
+              />
+            </div>
+          </div>
         )}
 
         {currentStep === STEPS.THANK_YOU && score && (
