@@ -76,7 +76,7 @@ export const LandingPage = ({ onStart }) => {
                 <p className="text-foreground font-medium mb-2">La différence?</p>
                 <p className="text-sm text-muted-foreground">
                   Elles découvrent leurs failles trop tard: pendant un <strong>audit du PFPDT</strong>, 
-                  après un <strong>incident de sécurité</strong>, ou lors d'une <strong>réclamation d'un patient/client</strong>.
+                  après un <strong>incident de sécurité</strong>, ou lors d&apos;une <strong>réclamation d&apos;un patient/client</strong>.
                 </p>
               </div>
             </div>
@@ -94,7 +94,7 @@ export const LandingPage = ({ onStart }) => {
               onClick={onStart}
               className="group"
             >
-              Commencer l'évaluation
+              Commencer l&apos;évaluation
               <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
             </Button>
             <p className="text-sm text-muted-foreground mt-4">
