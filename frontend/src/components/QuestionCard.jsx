@@ -13,6 +13,7 @@ import {
   HelpCircle, 
   ArrowRight, 
   ArrowLeft,
+  Send,
   Lock,
   FileSearch,
   Smartphone,
@@ -64,6 +65,7 @@ export const QuestionCard = ({
   onAnswer, 
   onNext, 
   onPrevious,
+  onSubmit,
   isFirst,
   isLast 
 }) => {
@@ -239,15 +241,27 @@ export const QuestionCard = ({
           Précédent
         </Button>
         
-        <Button
-          variant={selectedAnswer ? "premium" : "outline"}
-          onClick={onNext}
-          disabled={!selectedAnswer}
-          className="gap-2"
-        >
-          {isLast ? 'Terminer' : 'Suivant'}
-          <ArrowRight className="w-4 h-4" />
-        </Button>
+        {isLast ? (
+          <Button
+            variant="premium"
+            onClick={onSubmit}
+            disabled={!selectedAnswer}
+            className="gap-2"
+          >
+            <Send className="w-4 h-4" />
+            Envoyer les réponses
+          </Button>
+        ) : (
+          <Button
+            variant={selectedAnswer ? "premium" : "outline"}
+            onClick={onNext}
+            disabled={!selectedAnswer}
+            className="gap-2"
+          >
+            Suivant
+            <ArrowRight className="w-4 h-4" />
+          </Button>
+        )}
       </div>
     </motion.div>
   );
