@@ -4,6 +4,17 @@
 
 Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi fédérale sur la protection des données) pour Ypsys, destinée aux cabinets médicaux, laboratoires et fiduciaires en Suisse.
 
+## Flux utilisateur
+
+```
+1. Landing Page → "Commencer l'évaluation"
+2. Questionnaire (15 questions) → "Envoyer les réponses"
+3. Écran d'analyse animé (4 étapes visuelles)
+4. Écran de résultats avec teaser IA → "Recevoir mon rapport complet gratuit"
+5. Formulaire simplifié (prénom + email obligatoires)
+6. Page de remerciement avec score complet
+```
+
 ## Fonctionnalités implémentées
 
 ### 1. Page d'accueil
@@ -14,39 +25,47 @@ Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi 
 - Support du mode sombre/clair
 
 ### 2. Questionnaire interactif (15 questions)
-- **5 sections thématiques**:
-  - Accès aux données (Q1-Q3) - 30% du poids
-  - Protection des données (Q4-Q6) - 25% du poids
-  - Sous-traitants (Q7-Q8) - 20% du poids
-  - Droits des personnes (Q9-Q11) - 15% du poids
-  - Gestion des incidents (Q12-Q15) - 10% du poids
+- **5 sections thématiques** avec barre de progression
+- Tooltips enrichis "Pourquoi c'est important?"
+- Feedback instantané (succès/avertissement/danger)
+- **Bouton final**: "Envoyer les réponses" (et non "Suivant")
 
-- **Fonctionnalités par question**:
-  - Tooltip "Pourquoi c'est important?" avec contexte et risques
-  - Exemple de faille/warning visible
-  - 3-4 options de réponse
-  - Feedback instantané (succès/avertissement/danger)
-  - Explication détaillée de chaque réponse
+### 3. Écran d'analyse animé
+Affiche 4 étapes avec animation progressive:
+1. ✅ Analyse de vos réponses...
+2. ✅ Calcul du score de conformité...
+3. ✅ Évaluation des risques...
+4. ✅ Génération des recommandations...
 
-### 3. Formulaire de capture de leads
-- Champs: Prénom, Nom, Email, Entreprise
-- Champs optionnels: Taille entreprise, Secteur, Canton suisse
-- Case de consentement RGPD obligatoire
+Icône shield animée + indicateur de progression (3 points)
 
-### 4. Écran d'analyse IA (NOUVEAU)
-- Animation progressive montrant les étapes:
-  1. Connexion au conseiller IA
-  2. Transmission des données
-  3. Analyse en cours
-  4. Génération des recommandations
-  5. Analyse terminée
-- Appel à l'API OpenAI Assistant
-- Timeout et fallback automatique si OpenAI indisponible
+### 4. Écran de résultats avec teaser IA (NOUVEAU)
+- **En-tête**: "Votre analyse est prête !" avec icône sparkle
+- **Score**: X/10 dans une carte dédiée
+- **Status**: Vert/Orange/Rouge avec message contextuel
+- **Aperçu des priorités**: Teaser généré par OpenAI Assistant
+- **Section email**: "Obtenez votre rapport complet par email" avec 3 bénéfices
+- **CTA**: "Recevoir mon rapport complet gratuit"
 
-### 5. Page de résultats
-- Score normalisé (0-10)
-- Indicateur de niveau de risque (vert/orange/rouge)
-- **Teaser personnalisé généré par OpenAI** avec prénom et nom d'entreprise
+### 5. Formulaire simplifié (NOUVEAU)
+**Champs obligatoires:**
+- Prénom *
+- Email professionnel *
+
+**Champs optionnels** (dans section dépliable):
+- Nom
+- Nom de l'entreprise
+- Taille de l'entreprise
+- Secteur d'activité
+- Canton
+
+**Éléments:**
+- Case de consentement obligatoire
+- Bouton "Recevoir mon rapport"
+- Mention "Gratuit • Sans engagement • Résultats immédiats"
+
+### 6. Page de remerciement
+- Score complet avec indicateur visuel
 - Top 3 priorités d'action
 - Confirmation d'envoi email
 - CTA "Réserver une consultation"
@@ -57,75 +76,32 @@ Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi 
 - **Framework**: React 19 avec React Router
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Animations**: Framer Motion
-- **Intégrations**: 
-  - OpenAI SDK (Assistant API)
-  - Supabase JS Client
+- **Intégrations**: OpenAI SDK, Supabase JS Client
 
 ### Backend (Supabase - Europe)
-- **Base de données**: PostgreSQL hébergé en Europe (Frankfurt)
-- **RLS**: Row Level Security activé pour sécurité des données
-- **Tables**:
-  - `form_submissions` - Soumissions du formulaire
-  - `email_outputs` - Emails générés par l'IA
+- **Base de données**: PostgreSQL hébergé à Frankfurt
+- **RLS**: Row Level Security activé
+- **Tables**: form_submissions, email_outputs
 
 ### OpenAI Assistant
 - **ID**: asst_felvhtNS41JmXwkrGMPbXo3S
-- **Fonctions**:
-  - Génération du teaser personnalisé
-  - Classification de la température du lead (HOT/WARM/COLD)
-  - Génération des emails (utilisateur + commercial)
+- **Appel**: Après "Envoyer les réponses", avant le formulaire
+- **Output**: Teaser personnalisé + classification lead
 
-## Flux de données
+## Flux de données détaillé
 
 ```
-User Submit 
-    → [1] Calculate score (frontend)
-    → [2] Build payload JSON
-    → [3] Call OpenAI Assistant (avec timeout 45s)
-    → [4] Save to Supabase (form_submissions + email_outputs)
-    → [5] Display thank you page with teaser
-```
-
-## Modèles de données Supabase
-
-### form_submissions
-```sql
-id UUID PRIMARY KEY
-created_at TIMESTAMPTZ
-user_email TEXT
-user_first_name TEXT
-user_last_name TEXT
-company_name TEXT
-company_size TEXT -- '1-10', '11-25', '26-50', '51-100', '100+'
-industry TEXT -- 'lab', 'cabinet_medical', 'fiduciaire', 'autre'
-canton TEXT
-answers JSONB
-score_raw INTEGER
-score_normalized DECIMAL(3,1)
-risk_level TEXT -- 'green', 'orange', 'red'
-teaser_text TEXT
-lead_temperature TEXT -- 'HOT', 'WARM', 'COLD'
-status TEXT -- 'pending', 'processing', 'teaser_ready', 'emailed', 'error'
-consent_marketing BOOLEAN
-consent_timestamp TIMESTAMPTZ
-session_id TEXT
-```
-
-### email_outputs
-```sql
-id UUID PRIMARY KEY
-created_at TIMESTAMPTZ
-submission_id UUID REFERENCES form_submissions(id)
-email_user_subject TEXT
-email_user_markdown TEXT
-email_sales_subject TEXT
-email_sales_markdown TEXT
-lead_temperature TEXT
-user_email_sent BOOLEAN
-user_email_sent_at TIMESTAMPTZ
-sales_email_sent BOOLEAN
-sales_email_sent_at TIMESTAMPTZ
-error_message TEXT
+[Question 15] 
+    → Clic "Envoyer les réponses"
+    → [Écran d'analyse animé]
+    → Calculate score (frontend)
+    → Build payload JSON
+    → Call OpenAI Assistant (avec timeout 45s)
+    → [Écran de résultats avec teaser]
+    → Clic "Recevoir mon rapport"
+    → [Formulaire simplifié]
+    → Save to Supabase (form_submissions + email_outputs)
+    → [Page de remerciement]
 ```
 
 ## Variables d'environnement
@@ -136,20 +112,8 @@ REACT_APP_BACKEND_URL=<preview_url>
 REACT_APP_SUPABASE_URL=https://hdvhvadnwgaibcvvqypk.supabase.co
 REACT_APP_SUPABASE_ANON_KEY=eyJ...
 REACT_APP_OPENAI_API_KEY=sk-...
-REACT_APP_OPENAI_ASSISTANT_ID=asst_...
+REACT_APP_OPENAI_ASSISTANT_ID=asst_felvhtNS41JmXwkrGMPbXo3S
 ```
-
-## Design System
-
-### Couleurs (HSL)
-- **Primary (Magenta)**: 325 100% 39%
-- **Success (Vert)**: 145 63% 42%
-- **Warning (Orange)**: 38 92% 50%
-- **Danger (Rouge)**: 4 90% 58%
-
-### Typographie
-- **Display**: Playfair Display (titres)
-- **Body**: Inter (texte)
 
 ## URLs
 
@@ -158,12 +122,11 @@ REACT_APP_OPENAI_ASSISTANT_ID=asst_...
 
 ## Prochaines étapes
 
-1. **Intégration Dreamlit**: Configurer l'envoi automatique d'emails depuis Supabase
-2. **Application calendrier**: Remplacer le placeholder de réservation
-3. **Back-office admin**: Dashboard pour visualiser les leads et statistiques
-4. **Sécurisation production**: Déplacer l'appel OpenAI côté serveur (Edge Function)
+1. **Intégration Dreamlit**: Envoi automatique d'emails
+2. **Application calendrier**: Réservation de consultations
+3. **Sécurisation production**: Déplacer OpenAI côté serveur (Edge Function)
 
 ---
 
-*Version 2.0 - Janvier 2026*
-*Intégrations: OpenAI Assistant + Supabase (Europe)*
+*Version 3.0 - Janvier 2026*
+*Nouveau flux: Analyse → Teaser IA → Formulaire simplifié*
