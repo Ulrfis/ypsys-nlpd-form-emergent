@@ -11,7 +11,7 @@ Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi 
 - Statistiques clés (90% pensent être conformes, 70% ne le sont pas)
 - Message d'avertissement explicatif
 - Bouton CTA "Commencer l'évaluation"
-- Support du mode sombre
+- Support du mode sombre/clair
 
 ### 2. Questionnaire interactif (15 questions)
 - **5 sections thématiques**:
@@ -28,23 +28,26 @@ Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi 
   - Feedback instantané (succès/avertissement/danger)
   - Explication détaillée de chaque réponse
 
-- **Navigation**:
-  - Barre de progression avec sections
-  - Compteur de questions (X/15)
-  - Boutons Précédent/Suivant
-  - Indicateurs de complétion par section
-
 ### 3. Formulaire de capture de leads
 - Champs: Prénom, Nom, Email, Entreprise
 - Champs optionnels: Taille entreprise, Secteur, Canton suisse
 - Case de consentement RGPD obligatoire
-- Validation côté client
 
-### 4. Page de résultats
+### 4. Écran d'analyse IA (NOUVEAU)
+- Animation progressive montrant les étapes:
+  1. Connexion au conseiller IA
+  2. Transmission des données
+  3. Analyse en cours
+  4. Génération des recommandations
+  5. Analyse terminée
+- Appel à l'API OpenAI Assistant
+- Timeout et fallback automatique si OpenAI indisponible
+
+### 5. Page de résultats
 - Score normalisé (0-10)
 - Indicateur de niveau de risque (vert/orange/rouge)
+- **Teaser personnalisé généré par OpenAI** avec prénom et nom d'entreprise
 - Top 3 priorités d'action
-- Teaser personnalisé
 - Confirmation d'envoi email
 - CTA "Réserver une consultation"
 
@@ -54,78 +57,86 @@ Application web interactive d'auto-diagnostic de conformité nLPD (nouvelle Loi 
 - **Framework**: React 19 avec React Router
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Animations**: Framer Motion
-- **État**: React useState/useCallback hooks
+- **Intégrations**: 
+  - OpenAI SDK (Assistant API)
+  - Supabase JS Client
 
-### Backend (FastAPI)
-- **Base de données**: MongoDB (MONGO_URL)
-- **Endpoints API**:
-  - `POST /api/submissions` - Créer soumission
-  - `GET /api/submissions` - Liste des soumissions
-  - `GET /api/submissions/:id` - Détail soumission
-  - `PATCH /api/submissions/:id/status` - Mise à jour statut
-  - `POST /api/emails` - Créer email outputs
-  - `GET /api/stats` - Statistiques
+### Backend (Supabase - Europe)
+- **Base de données**: PostgreSQL hébergé en Europe (Frankfurt)
+- **RLS**: Row Level Security activé pour sécurité des données
+- **Tables**:
+  - `form_submissions` - Soumissions du formulaire
+  - `email_outputs` - Emails générés par l'IA
 
-### Modèles de données
+### OpenAI Assistant
+- **ID**: asst_felvhtNS41JmXwkrGMPbXo3S
+- **Fonctions**:
+  - Génération du teaser personnalisé
+  - Classification de la température du lead (HOT/WARM/COLD)
+  - Génération des emails (utilisateur + commercial)
 
-```javascript
-// FormSubmission
-{
-  id: UUID,
-  created_at: DateTime,
-  user_email: String,
-  user_first_name: String,
-  user_last_name: String,
-  company_name: String,
-  company_size: String?, // '1-10', '11-25', '26-50', '51-100', '100+'
-  industry: String?, // 'lab', 'cabinet_medical', 'fiduciaire', 'autre'
-  canton: String?,
-  answers: Object, // {q1: "option", q2: "option", ...}
-  score_raw: Number, // 0-45
-  score_normalized: Number, // 0-10
-  risk_level: String, // 'green', 'orange', 'red'
-  status: String, // 'pending', 'processing', 'teaser_ready', 'emailed'
-  teaser_text: String?,
-  consent_marketing: Boolean,
-  consent_timestamp: DateTime?
-}
+## Flux de données
+
+```
+User Submit 
+    → [1] Calculate score (frontend)
+    → [2] Build payload JSON
+    → [3] Call OpenAI Assistant (avec timeout 45s)
+    → [4] Save to Supabase (form_submissions + email_outputs)
+    → [5] Display thank you page with teaser
 ```
 
-## Intégrations futures (prêtes à implémenter)
+## Modèles de données Supabase
 
-### OpenAI Assistant API
-- Variables d'environnement prêtes: `OPENAI_API_KEY`, `OPENAI_ASSISTANT_ID`
-- Génération de teaser personnalisé
-- Génération d'emails utilisateur et commercial
-- Classification lead (HOT/WARM/COLD)
+### form_submissions
+```sql
+id UUID PRIMARY KEY
+created_at TIMESTAMPTZ
+user_email TEXT
+user_first_name TEXT
+user_last_name TEXT
+company_name TEXT
+company_size TEXT -- '1-10', '11-25', '26-50', '51-100', '100+'
+industry TEXT -- 'lab', 'cabinet_medical', 'fiduciaire', 'autre'
+canton TEXT
+answers JSONB
+score_raw INTEGER
+score_normalized DECIMAL(3,1)
+risk_level TEXT -- 'green', 'orange', 'red'
+teaser_text TEXT
+lead_temperature TEXT -- 'HOT', 'WARM', 'COLD'
+status TEXT -- 'pending', 'processing', 'teaser_ready', 'emailed', 'error'
+consent_marketing BOOLEAN
+consent_timestamp TIMESTAMPTZ
+session_id TEXT
+```
 
-### Dreamlit (Email)
-- Table `email_outputs` prête
-- Triggers Supabase à configurer
-- Templates Markdown pour conversion HTML
-
-## URLs et endpoints
-
-- **Frontend**: https://prd-builder-15.preview.emergentagent.com
-- **API**: https://prd-builder-15.preview.emergentagent.com/api
-- **Health check**: GET /api/health
-- **Stats**: GET /api/stats
+### email_outputs
+```sql
+id UUID PRIMARY KEY
+created_at TIMESTAMPTZ
+submission_id UUID REFERENCES form_submissions(id)
+email_user_subject TEXT
+email_user_markdown TEXT
+email_sales_subject TEXT
+email_sales_markdown TEXT
+lead_temperature TEXT
+user_email_sent BOOLEAN
+user_email_sent_at TIMESTAMPTZ
+sales_email_sent BOOLEAN
+sales_email_sent_at TIMESTAMPTZ
+error_message TEXT
+```
 
 ## Variables d'environnement
 
 ### Frontend (.env)
 ```
 REACT_APP_BACKEND_URL=<preview_url>
-```
-
-### Backend (.env)
-```
-MONGO_URL=<mongodb_url>
-DB_NAME=<database_name>
-CORS_ORIGINS=*
-# À ajouter pour OpenAI:
-# OPENAI_API_KEY=sk-...
-# OPENAI_ASSISTANT_ID=asst_...
+REACT_APP_SUPABASE_URL=https://hdvhvadnwgaibcvvqypk.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=eyJ...
+REACT_APP_OPENAI_API_KEY=sk-...
+REACT_APP_OPENAI_ASSISTANT_ID=asst_...
 ```
 
 ## Design System
@@ -140,14 +151,19 @@ CORS_ORIGINS=*
 - **Display**: Playfair Display (titres)
 - **Body**: Inter (texte)
 
+## URLs
+
+- **Frontend**: https://prd-builder-15.preview.emergentagent.com
+- **Supabase Dashboard**: https://supabase.com/dashboard/project/hdvhvadnwgaibcvvqypk
+
 ## Prochaines étapes
 
-1. **Intégration OpenAI**: Connecter l'Assistant API pour génération de contenu personnalisé
-2. **Intégration Dreamlit**: Configurer l'envoi d'emails automatique
-3. **Application calendrier**: Remplacer le placeholder de réservation
-4. **Back-office admin**: Dashboard pour visualiser les leads et statistiques
+1. **Intégration Dreamlit**: Configurer l'envoi automatique d'emails depuis Supabase
+2. **Application calendrier**: Remplacer le placeholder de réservation
+3. **Back-office admin**: Dashboard pour visualiser les leads et statistiques
+4. **Sécurisation production**: Déplacer l'appel OpenAI côté serveur (Edge Function)
 
 ---
 
-*Version 1.0 - Janvier 2026*
-*Propriétaire: Ypsys + MemoWays*
+*Version 2.0 - Janvier 2026*
+*Intégrations: OpenAI Assistant + Supabase (Europe)*
