@@ -1,51 +1,93 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Brain, Database, Mail, CheckCircle, Loader2 } from 'lucide-react';
+import { Shield, Database, LineChart, ShieldCheck, Sparkles, Check, Loader2 } from 'lucide-react';
 
 const steps = [
   {
-    id: 'creating_thread',
-    icon: Brain,
-    title: 'Connexion au conseiller IA',
-    description: 'Établissement de la connexion sécurisée...',
-  },
-  {
-    id: 'sending_data',
+    id: 'sending',
     icon: Database,
-    title: 'Transmission des données',
-    description: 'Envoi de vos réponses pour analyse...',
+    title: 'Analyse de vos réponses...',
+    description: 'Envoi des données pour analyse',
+    color: 'bg-success/10 text-success border-success/20',
+    iconBg: 'bg-success/20',
   },
   {
-    id: 'analyzing',
-    icon: Shield,
-    title: 'Analyse en cours',
-    description: 'Évaluation de votre conformité nLPD...',
+    id: 'scoring',
+    icon: LineChart,
+    title: 'Calcul du score de conformité...',
+    description: 'Évaluation de votre niveau de conformité',
+    color: 'bg-success/10 text-success border-success/20',
+    iconBg: 'bg-success/20',
+  },
+  {
+    id: 'risk',
+    icon: ShieldCheck,
+    title: 'Évaluation des risques...',
+    description: 'Identification des points critiques',
+    color: 'bg-success/10 text-success border-success/20',
+    iconBg: 'bg-success/20',
   },
   {
     id: 'generating',
-    icon: Mail,
-    title: 'Génération des recommandations',
-    description: 'Préparation de votre rapport personnalisé...',
-  },
-  {
-    id: 'complete',
-    icon: CheckCircle,
-    title: 'Analyse terminée',
-    description: 'Vos résultats sont prêts!',
+    icon: Sparkles,
+    title: 'Génération des recommandations...',
+    description: 'Préparation de votre diagnostic personnalisé',
+    color: 'bg-primary/10 text-primary border-primary/20',
+    iconBg: 'bg-primary/20',
   },
 ];
 
 export const AnalysisLoadingScreen = ({ currentStatus, statusMessage }) => {
-  const [visibleSteps, setVisibleSteps] = useState([]);
+  const [completedSteps, setCompletedSteps] = useState([]);
+  const [activeStep, setActiveStep] = useState(0);
   
-  // Find current step index
-  const currentStepIndex = steps.findIndex(s => s.id === currentStatus);
-  
+  // Map external status to internal steps
   useEffect(() => {
-    // Show steps progressively
-    const newVisibleSteps = steps.slice(0, currentStepIndex + 1).map(s => s.id);
-    setVisibleSteps(newVisibleSteps);
-  }, [currentStepIndex]);
+    const statusToStep = {
+      'creating_thread': 0,
+      'sending_data': 0,
+      'analyzing': 1,
+      'generating': 3,
+      'complete': 4,
+      'error': 4,
+    };
+    
+    const stepIndex = statusToStep[currentStatus] ?? 0;
+    
+    // Mark steps as completed
+    const newCompleted = [];
+    for (let i = 0; i < stepIndex; i++) {
+      newCompleted.push(steps[i]?.id);
+    }
+    setCompletedSteps(newCompleted);
+    setActiveStep(Math.min(stepIndex, steps.length - 1));
+  }, [currentStatus]);
+
+  // Auto-progress animation for visual effect
+  useEffect(() => {
+    if (currentStatus === 'analyzing') {
+      const timer1 = setTimeout(() => {
+        setCompletedSteps(prev => [...prev, 'sending']);
+        setActiveStep(1);
+      }, 1500);
+      
+      const timer2 = setTimeout(() => {
+        setCompletedSteps(prev => [...prev, 'scoring']);
+        setActiveStep(2);
+      }, 3000);
+      
+      const timer3 = setTimeout(() => {
+        setCompletedSteps(prev => [...prev, 'risk']);
+        setActiveStep(3);
+      }, 4500);
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+        clearTimeout(timer3);
+      };
+    }
+  }, [currentStatus]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-hero py-12">
@@ -53,75 +95,76 @@ export const AnalysisLoadingScreen = ({ currentStatus, statusMessage }) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="max-w-xl mx-auto"
+          className="max-w-lg mx-auto"
         >
-          {/* Header */}
+          {/* Header with Shield Icon */}
           <div className="text-center mb-10">
-            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6 relative">
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6 relative">
               <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                className="absolute inset-0 rounded-2xl border-2 border-primary/20 border-t-primary"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.5, 1, 0.5]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+                className="absolute inset-0 rounded-full bg-primary/20"
               />
-              <Brain className="w-10 h-10 text-primary" />
+              <Shield className="w-12 h-12 text-primary relative z-10" />
             </div>
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-3">
-              Analyse de vos réponses
+              Analyse en cours
             </h1>
             <p className="text-muted-foreground">
-              Notre conseiller IA analyse votre situation pour générer des recommandations personnalisées.
+              Nous analysons vos réponses pour établir votre diagnostic nLPD
             </p>
           </div>
 
           {/* Steps */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <AnimatePresence mode="popLayout">
               {steps.map((step, index) => {
-                const isVisible = visibleSteps.includes(step.id);
-                const isCurrent = step.id === currentStatus;
-                const isComplete = currentStepIndex > index;
+                const isCompleted = completedSteps.includes(step.id);
+                const isActive = activeStep === index && !isCompleted;
                 const StepIcon = step.icon;
-
-                if (!isVisible) return null;
 
                 return (
                   <motion.div
                     key={step.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.15, duration: 0.3 }}
                     className={`
-                      flex items-center gap-4 p-4 rounded-xl border-2 transition-all
-                      ${isCurrent ? 'bg-primary/5 border-primary/30' : ''}
-                      ${isComplete ? 'bg-success/5 border-success/30' : ''}
-                      ${!isCurrent && !isComplete ? 'bg-card border-border' : ''}
+                      flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-300
+                      ${isCompleted ? 'bg-success/5 border-success/30' : ''}
+                      ${isActive ? step.color + ' border-2' : ''}
+                      ${!isCompleted && !isActive ? 'bg-muted/30 border-muted/50 opacity-60' : ''}
                     `}
                   >
                     <div className={`
-                      w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0
-                      ${isCurrent ? 'bg-primary/10' : ''}
-                      ${isComplete ? 'bg-success/10' : ''}
-                      ${!isCurrent && !isComplete ? 'bg-muted' : ''}
+                      w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-all
+                      ${isCompleted ? 'bg-success/20' : ''}
+                      ${isActive ? step.iconBg : ''}
+                      ${!isCompleted && !isActive ? 'bg-muted/50' : ''}
                     `}>
-                      {isCurrent ? (
-                        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                      ) : isComplete ? (
-                        <CheckCircle className="w-6 h-6 text-success" />
+                      {isCompleted ? (
+                        <Check className="w-5 h-5 text-success" />
+                      ) : isActive ? (
+                        <Loader2 className="w-5 h-5 animate-spin text-current" />
                       ) : (
-                        <StepIcon className="w-6 h-6 text-muted-foreground" />
+                        <StepIcon className="w-5 h-5 text-muted-foreground" />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className={`
-                        font-medium
-                        ${isCurrent ? 'text-primary' : ''}
-                        ${isComplete ? 'text-success' : ''}
-                        ${!isCurrent && !isComplete ? 'text-foreground' : ''}
+                        font-medium truncate
+                        ${isCompleted ? 'text-success' : ''}
+                        ${isActive ? 'text-foreground' : ''}
+                        ${!isCompleted && !isActive ? 'text-muted-foreground' : ''}
                       `}>
                         {step.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {isCurrent && statusMessage ? statusMessage : step.description}
                       </p>
                     </div>
                   </motion.div>
@@ -130,17 +173,25 @@ export const AnalysisLoadingScreen = ({ currentStatus, statusMessage }) => {
             </AnimatePresence>
           </div>
 
-          {/* Estimated time */}
-          {currentStatus !== 'complete' && (
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="text-center text-sm text-muted-foreground mt-8"
-            >
-              Temps estimé: 10-15 secondes
-            </motion.p>
-          )}
+          {/* Progress Dots */}
+          <div className="flex items-center justify-center gap-2 mt-8">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2.5 h-2.5 rounded-full bg-primary"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.4, 1, 0.4],
+                }}
+                transition={{
+                  duration: 1.2,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: i * 0.2,
+                }}
+              />
+            ))}
+          </div>
         </motion.div>
       </div>
     </div>
