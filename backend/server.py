@@ -1,7 +1,8 @@
 from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
@@ -13,12 +14,7 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
-
-# Create the main app without a prefix
+# Create the main app
 app = FastAPI(
     title="nLPD Ypsys Form API",
     description="Backend API for the nLPD compliance assessment form",
@@ -33,10 +29,10 @@ api_router = APIRouter(prefix="/api")
 
 class FormSubmissionCreate(BaseModel):
     """Model for creating a new form submission"""
-    user_email: EmailStr
+    user_email: Optional[EmailStr] = None
     user_first_name: str
-    user_last_name: str
-    company_name: str
+    user_last_name: Optional[str] = ""
+    company_name: Optional[str] = "Non renseigné"
     company_size: Optional[str] = None
     industry: Optional[str] = None
     canton: Optional[str] = None
@@ -55,10 +51,10 @@ class FormSubmission(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     
     # Identity
-    user_email: str
+    user_email: Optional[str] = None
     user_first_name: str
-    user_last_name: str
-    company_name: str
+    user_last_name: Optional[str] = ""
+    company_name: Optional[str] = "Non renseigné"
     company_size: Optional[str] = None
     industry: Optional[str] = None
     canton: Optional[str] = None
@@ -81,33 +77,6 @@ class FormSubmission(BaseModel):
     
     # Metadata
     session_id: Optional[str] = None
-    device_type: Optional[str] = None
-    utm_source: Optional[str] = None
-    utm_campaign: Optional[str] = None
-
-
-class EmailOutput(BaseModel):
-    """Model for email outputs"""
-    model_config = ConfigDict(extra="ignore")
-    
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    submission_id: str
-    
-    # Generated content
-    email_user_markdown: Optional[str] = None
-    email_user_subject: Optional[str] = None
-    email_sales_markdown: Optional[str] = None
-    email_sales_subject: Optional[str] = None
-    
-    # Send status
-    user_email_sent: bool = False
-    user_email_sent_at: Optional[datetime] = None
-    sales_email_sent: bool = False
-    sales_email_sent_at: Optional[datetime] = None
-    
-    # Errors
-    error_message: Optional[str] = None
 
 
 class StatusCheck(BaseModel):
@@ -120,6 +89,14 @@ class StatusCheck(BaseModel):
 
 class StatusCheckCreate(BaseModel):
     client_name: str
+
+
+# ============ IN-MEMORY STORAGE (for Railway without MongoDB) ============
+# Note: In production, data is stored in Supabase from the frontend
+# This is just for API compatibility
+
+submissions_store = []
+status_checks_store = []
 
 
 # ============ ROUTES ============
@@ -146,16 +123,10 @@ async def create_submission(input: FormSubmissionCreate):
             session_id=str(uuid.uuid4())
         )
         
-        # Convert to dict and serialize datetime to ISO string for MongoDB
-        doc = submission_obj.model_dump()
-        doc['created_at'] = doc['created_at'].isoformat()
-        if doc.get('consent_timestamp'):
-            doc['consent_timestamp'] = doc['consent_timestamp'].isoformat()
+        # Store in memory (data is also stored in Supabase from frontend)
+        submissions_store.append(submission_obj.model_dump())
         
-        # Insert into MongoDB
-        await db.form_submissions.insert_one(doc)
-        
-        logging.info(f"New submission created: {submission_obj.id} for {submission_obj.user_email}")
+        logging.info(f"New submission created: {submission_obj.id}")
         
         return submission_obj
         
@@ -168,20 +139,7 @@ async def create_submission(input: FormSubmissionCreate):
 async def get_submissions(limit: int = 100, skip: int = 0):
     """Get all form submissions"""
     try:
-        submissions = await db.form_submissions.find(
-            {}, 
-            {"_id": 0}
-        ).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
-        
-        # Convert ISO string timestamps back to datetime objects
-        for submission in submissions:
-            if isinstance(submission.get('created_at'), str):
-                submission['created_at'] = datetime.fromisoformat(submission['created_at'])
-            if isinstance(submission.get('consent_timestamp'), str):
-                submission['consent_timestamp'] = datetime.fromisoformat(submission['consent_timestamp'])
-        
-        return submissions
-        
+        return submissions_store[skip:skip+limit]
     except Exception as e:
         logging.error(f"Error fetching submissions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -191,106 +149,14 @@ async def get_submissions(limit: int = 100, skip: int = 0):
 async def get_submission(submission_id: str):
     """Get a specific form submission by ID"""
     try:
-        submission = await db.form_submissions.find_one(
-            {"id": submission_id},
-            {"_id": 0}
-        )
-        
-        if not submission:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        
-        # Convert ISO string timestamps back to datetime objects
-        if isinstance(submission.get('created_at'), str):
-            submission['created_at'] = datetime.fromisoformat(submission['created_at'])
-        if isinstance(submission.get('consent_timestamp'), str):
-            submission['consent_timestamp'] = datetime.fromisoformat(submission['consent_timestamp'])
-        
-        return submission
-        
+        for submission in submissions_store:
+            if submission.get('id') == submission_id:
+                return submission
+        raise HTTPException(status_code=404, detail="Submission not found")
     except HTTPException:
         raise
     except Exception as e:
         logging.error(f"Error fetching submission {submission_id}: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@api_router.patch("/submissions/{submission_id}/status")
-async def update_submission_status(submission_id: str, status: str, teaser_text: Optional[str] = None):
-    """Update the status of a submission"""
-    try:
-        update_data = {"status": status}
-        if teaser_text:
-            update_data["teaser_text"] = teaser_text
-            
-        result = await db.form_submissions.update_one(
-            {"id": submission_id},
-            {"$set": update_data}
-        )
-        
-        if result.matched_count == 0:
-            raise HTTPException(status_code=404, detail="Submission not found")
-        
-        return {"message": "Status updated successfully", "id": submission_id, "status": status}
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error updating submission status: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# Email Outputs
-@api_router.post("/emails", response_model=EmailOutput)
-async def create_email_output(submission_id: str, email_user_markdown: str, email_user_subject: str, 
-                              email_sales_markdown: str, email_sales_subject: str):
-    """Create email output records for a submission"""
-    try:
-        email_output = EmailOutput(
-            submission_id=submission_id,
-            email_user_markdown=email_user_markdown,
-            email_user_subject=email_user_subject,
-            email_sales_markdown=email_sales_markdown,
-            email_sales_subject=email_sales_subject
-        )
-        
-        # Convert to dict and serialize datetime to ISO string for MongoDB
-        doc = email_output.model_dump()
-        doc['created_at'] = doc['created_at'].isoformat()
-        
-        # Insert into MongoDB
-        await db.email_outputs.insert_one(doc)
-        
-        logging.info(f"Email output created for submission: {submission_id}")
-        
-        return email_output
-        
-    except Exception as e:
-        logging.error(f"Error creating email output: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@api_router.get("/emails/{submission_id}", response_model=EmailOutput)
-async def get_email_output(submission_id: str):
-    """Get email output for a specific submission"""
-    try:
-        email_output = await db.email_outputs.find_one(
-            {"submission_id": submission_id},
-            {"_id": 0}
-        )
-        
-        if not email_output:
-            raise HTTPException(status_code=404, detail="Email output not found")
-        
-        # Convert ISO string timestamps back to datetime objects
-        if isinstance(email_output.get('created_at'), str):
-            email_output['created_at'] = datetime.fromisoformat(email_output['created_at'])
-        
-        return email_output
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logging.error(f"Error fetching email output: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -299,29 +165,28 @@ async def get_email_output(submission_id: str):
 async def get_statistics():
     """Get submission statistics"""
     try:
-        total_submissions = await db.form_submissions.count_documents({})
+        total = len(submissions_store)
         
-        # Count by risk level
-        risk_levels = await db.form_submissions.aggregate([
-            {"$group": {"_id": "$risk_level", "count": {"$sum": 1}}}
-        ]).to_list(100)
+        risk_levels = {}
+        industries = {}
+        total_score = 0
         
-        # Count by industry
-        industries = await db.form_submissions.aggregate([
-            {"$match": {"industry": {"$ne": None}}},
-            {"$group": {"_id": "$industry", "count": {"$sum": 1}}}
-        ]).to_list(100)
-        
-        # Average score
-        avg_score = await db.form_submissions.aggregate([
-            {"$group": {"_id": None, "avg_score": {"$avg": "$score_normalized"}}}
-        ]).to_list(1)
+        for sub in submissions_store:
+            level = sub.get('risk_level')
+            if level:
+                risk_levels[level] = risk_levels.get(level, 0) + 1
+            
+            ind = sub.get('industry')
+            if ind:
+                industries[ind] = industries.get(ind, 0) + 1
+            
+            total_score += sub.get('score_normalized', 0)
         
         return {
-            "total_submissions": total_submissions,
-            "risk_levels": {r["_id"]: r["count"] for r in risk_levels if r["_id"]},
-            "industries": {i["_id"]: i["count"] for i in industries if i["_id"]},
-            "average_score": round(avg_score[0]["avg_score"], 2) if avg_score and avg_score[0].get("avg_score") else 0
+            "total_submissions": total,
+            "risk_levels": risk_levels,
+            "industries": industries,
+            "average_score": round(total_score / total, 2) if total > 0 else 0
         }
         
     except Exception as e:
@@ -334,28 +199,19 @@ async def get_statistics():
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.model_dump()
     status_obj = StatusCheck(**status_dict)
-    
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
+    status_checks_store.append(status_obj.model_dump())
     return status_obj
 
 
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
-    
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+    return status_checks_store
 
 
 # Include the router in the main app
 app.include_router(api_router)
 
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -363,6 +219,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files (React build) in production
+STATIC_DIR = ROOT_DIR / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR / "static")), name="static")
+    
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve React SPA for all non-API routes"""
+        # Check if it's an API route
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="Not found")
+        
+        # Check if file exists in static directory
+        file_path = STATIC_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        
+        # Otherwise serve index.html (SPA routing)
+        index_path = STATIC_DIR / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        
+        raise HTTPException(status_code=404, detail="Not found")
 
 # Configure logging
 logging.basicConfig(
@@ -375,18 +255,9 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup_event():
     logger.info("nLPD Ypsys Form API started")
-    
-    # Create indexes for better query performance
-    await db.form_submissions.create_index("id", unique=True)
-    await db.form_submissions.create_index("user_email")
-    await db.form_submissions.create_index("status")
-    await db.form_submissions.create_index("created_at")
-    await db.email_outputs.create_index("submission_id")
-    
-    logger.info("Database indexes created")
+    logger.info(f"Static directory exists: {STATIC_DIR.exists()}")
 
 
 @app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
-    logger.info("Database connection closed")
+async def shutdown_event():
+    logger.info("nLPD Ypsys Form API shutting down")
