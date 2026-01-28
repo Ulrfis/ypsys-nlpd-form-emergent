@@ -41,31 +41,52 @@ export const LandingPage = ({ onStart }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid md:grid-cols-2 gap-6 mb-12 max-w-2xl mx-auto"
+            className="grid md:grid-cols-2 gap-6 mb-10 max-w-2xl mx-auto"
           >
             <Card className="border-2 border-warning/20 bg-warning/5">
-              <CardContent className="p-6 text-center">
-                <div className="text-4xl font-bold text-warning mb-2">90%</div>
-                <p className="text-sm text-muted-foreground">
+              <CardContent className="p-8 text-center">
+                <div className="text-5xl font-extrabold text-warning mb-3">90%</div>
+                <p className="text-base font-semibold text-muted-foreground">
                   des PME suisses pensent être conformes
                 </p>
               </CardContent>
             </Card>
             <Card className="border-2 border-danger/20 bg-danger/5">
-              <CardContent className="p-6 text-center">
-                <div className="text-4xl font-bold text-danger mb-2">70%</div>
-                <p className="text-sm text-muted-foreground">
+              <CardContent className="p-8 text-center">
+                <div className="text-5xl font-extrabold text-danger mb-3">70%</div>
+                <p className="text-base font-semibold text-muted-foreground">
                   ne le sont pas réellement
                 </p>
               </CardContent>
             </Card>
           </motion.div>
 
+          {/* CTA Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="mb-10"
+          >
+            <Button 
+              variant="premium" 
+              size="xl" 
+              onClick={onStart}
+              className="group"
+            >
+              Commencer l&apos;évaluation
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+            </Button>
+            <p className="text-sm text-muted-foreground mt-4">
+              5 minutes • 15 questions • Résultats personnalisés
+            </p>
+          </motion.div>
+
           {/* Warning Message */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
             className="bg-card border border-border rounded-xl p-6 mb-10 max-w-2xl mx-auto"
           >
             <div className="flex items-start gap-4">
@@ -80,26 +101,6 @@ export const LandingPage = ({ onStart }) => {
                 </p>
               </div>
             </div>
-          </motion.div>
-
-          {/* CTA Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
-            <Button 
-              variant="premium" 
-              size="xl" 
-              onClick={onStart}
-              className="group"
-            >
-              Commencer l&apos;évaluation
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-            </Button>
-            <p className="text-sm text-muted-foreground mt-4">
-              5 minutes • 15 questions • Résultats personnalisés
-            </p>
           </motion.div>
         </motion.div>
 
