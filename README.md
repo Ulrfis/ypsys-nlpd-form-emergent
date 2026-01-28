@@ -1,10 +1,12 @@
 # Formulaire nLPD Ypsys
 
-> **Statut**: 🟢 Livré
+> **Statut**: 🟢 En production
 
 > **Type**: 🏢 Client
 
-> **Créé avec**: Emergent AI (Claude) + React + FastAPI
+> **Créé avec**: Emergent AI (Claude) + Cursor + React + FastAPI
+
+> **Déployé sur**: Railway
 
 > **Démarré**: 2026-01-27
 
@@ -47,7 +49,7 @@ Créer un outil d'évaluation de conformité à la nouvelle Loi fédérale sur l
 | Backend | FastAPI (Python 3.11) |
 | Base de données | Supabase (PostgreSQL, Frankfurt EU) |
 | IA | OpenAI Assistant API |
-| Hosting | Railway (prévu) / Emergent (preview) |
+| Hosting | Railway (production) / Emergent (preview) |
 
 ---
 
@@ -117,6 +119,19 @@ CORS_ORIGINS=*
 
 ---
 
+## Déploiement Railway
+
+Le déploiement utilise Nixpacks avec un virtual environment Python pour contourner les restrictions PEP 668.
+
+**Points clés** :
+- Le build crée un venv à `/app/venv`
+- Tous les fichiers de config (`nixpacks.toml`, `railway.toml`, `railway.json`, `Procfile`) doivent utiliser `/app/venv/bin/uvicorn`
+- La configuration Nixpacks inclut : `python311`, `python311Packages.pip`, `nodejs_20`
+
+**Note historique** : Ce déploiement a nécessité 8 tentatives pour résoudre les problèmes spécifiques à Nixpacks + Python + Nix (5 avec Claude Code, 3 avec Cursor). Voir `STORY.md` pour les détails.
+
+---
+
 ## Notes
 - Les données utilisateurs sont stockées exclusivement dans Supabase (Europe) pour conformité nLPD
 - L'appel OpenAI se fait côté client (à migrer vers Edge Function pour production)
@@ -125,4 +140,4 @@ CORS_ORIGINS=*
 
 ---
 
-*Project Memoways pour Ypsys*
+*Project Memoways pour Ypsys — Développé avec Emergent AI, déployé avec Cursor*

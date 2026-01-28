@@ -14,10 +14,26 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ---
 
+## [0.4.0] - 2026-01-28
+
+### Ajouté
+- Déploiement Railway fonctionnel avec virtual environment Python
+- Configuration Nixpacks corrigée pour environnement Nix/PEP 668
+
+### Corrigé
+- `nixpacks.toml` : utilisation d'un venv pour contourner PEP 668 (externally-managed-environment)
+- `railway.toml`, `railway.json`, `Procfile` : chemins uvicorn alignés avec le venv (`/app/venv/bin/uvicorn`)
+- Fix "No module named pip" : passage de `python3 -m pip` à création de venv
+
+### Note technique
+Ce déploiement a nécessité 8 tentatives (5 avec Claude Code, 3 avec Cursor) pour résoudre les problèmes spécifiques à Nixpacks + Python + Nix.
+
+---
+
 ## [0.3.0] - 2026-01-28
 
 ### Ajouté
-- Configuration Railway complète (railway.json, nixpacks.toml, Procfile)
+- Configuration Railway initiale (railway.json, nixpacks.toml, Procfile)
 - Fichiers .python-version et .node-version
 - Script start.sh pour déploiement
 - Backend simplifié sans dépendance MongoDB

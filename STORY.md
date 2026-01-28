@@ -162,6 +162,64 @@ affiche la réponse générée par l'assistant.
 
 ---
 
+### 2026-01-28 — Déploiement Railway : L'odyssée 🔴➡️🟢
+
+**Intent**: Déployer le projet sur Railway pour la production.
+
+**Tool(s)**: Claude Code (5 tentatives), puis Cursor (3 tentatives)
+
+**The Journey**:
+
+Ce déploiement a été une véritable leçon d'humilité. Malgré 5 tentatives avec Claude Code, le build échouait systématiquement. C'est finalement Cursor qui a résolu le problème en 3 itérations.
+
+**Problème 1 — "No module named pip"** (Claude Code, tentatives 1-5)
+```
+/root/.nix-profile/bin/python3: No module named pip
+```
+La configuration initiale utilisait `python3 -m pip install`. Or, dans l'environnement Nix de Railway, `python311Packages.pip` installe pip comme commande standalone (`pip3`), PAS comme module Python. Claude Code n'a pas réussi à identifier cette subtilité de Nixpacks.
+
+**Problème 2 — "externally-managed-environment"** (Cursor, tentative 1)
+```
+error: externally-managed-environment
+× This environment is externally managed
+```
+Après correction vers `pip3 install`, le build a révélé un autre problème : PEP 668. L'environnement Python de Nix est "externally managed" et interdit les installations pip directes dans le système. Cursor a proposé d'utiliser un virtual environment.
+
+**Problème 3 — "uvicorn: command not found"** (Cursor, tentative 2)
+```
+/bin/bash: line 1: uvicorn: command not found
+```
+Le venv était créé et pip fonctionnait, mais au démarrage le serveur ne trouvait pas uvicorn. Cause : `railway.toml`, `railway.json` et `Procfile` avaient leurs propres commandes de démarrage qui n'utilisaient pas le chemin du venv. Cursor a identifié ces 3 fichiers et les a tous corrigés.
+
+**Solution finale**:
+```toml
+# nixpacks.toml
+[phases.install]
+cmds = [
+    "cd frontend && npm install",
+    "python3 -m venv /app/venv",
+    "/app/venv/bin/pip install -r backend/requirements.txt"
+]
+
+[start]
+cmd = "cd backend && /app/venv/bin/uvicorn server:app --host 0.0.0.0 --port ${PORT:-8000}"
+```
+
+**Outcome**:
+- Virtual environment Python isolé
+- Tous les fichiers de config alignés (nixpacks.toml, railway.toml, railway.json, Procfile)
+- Build et déploiement réussis
+
+**Friction**: 8 tentatives au total, 2h30 de debugging.
+
+**Surprise**: La documentation Nixpacks ne mentionne pas explicitement ces edge cases Python/Nix. Claude Code connaissait les concepts mais n'arrivait pas à les connecter au contexte spécifique. Cursor, avec son approche plus itérative et son accès aux logs en temps réel, a mieux navigué ce problème.
+
+**Emotional state**: Frustration initiale → Soulagement → Satisfaction d'avoir compris les mécanismes sous-jacents.
+
+**Time**: ~2h30
+
+---
+
 ## Pivots & Breakages
 
 ### 2026-01-27 — Clé Supabase incorrecte
@@ -194,6 +252,25 @@ affiche la réponse générée par l'assistant.
 
 ---
 
+### 2026-01-28 — Railway Deployment Hell
+
+**What broke**: Le déploiement Railway échouait systématiquement (8 tentatives au total).
+
+**Why**: Trois problèmes en cascade :
+1. `python3 -m pip` ne fonctionne pas avec Nix (pip n'est pas un module Python)
+2. `pip3 install` direct bloqué par PEP 668 (externally-managed-environment)
+3. Les fichiers de config Railway (railway.toml, railway.json, Procfile) surchargent nixpacks.toml
+
+**What you learned**:
+- Nixpacks avec Python nécessite TOUJOURS un virtual environment
+- Vérifier TOUS les fichiers de configuration, pas seulement nixpacks.toml
+- Les outils IA ont des forces complémentaires : Claude Code pour l'architecture, Cursor pour le debugging itératif
+- Lire les logs d'erreur COMPLÈTEMENT - chaque erreur était différente
+
+**Emotional state**: Cycle frustration → investigation → eureka, répété 3 fois. Satisfaction finale d'avoir compris le "pourquoi" de chaque erreur.
+
+---
+
 ## Pulse Checks
 
 ### 2026-01-27 — Pulse Check #1
@@ -204,13 +281,21 @@ affiche la réponse générée par l'assistant.
 **If you stopped now, what would you regret?**: Ne pas avoir testé le flux complet end-to-end.
 **One word**: Satisfait
 
-### 2026-01-28 — Pulse Check #2
+### 2026-01-28 — Pulse Check #2 (matin)
 
 **Energy level**: 9/10
 **Current doubt**: Le déploiement Railway va-t-il fonctionner du premier coup?
 **Current satisfaction**: Le nouveau flux (Analyse → Résultats → Formulaire) est exactement ce que le client voulait.
 **If you stopped now, what would you regret?**: Ne pas avoir documenté proprement le projet.
 **One word**: Accompli
+
+### 2026-01-28 — Pulse Check #3 (après-midi)
+
+**Energy level**: 7/10 → 9/10
+**Current doubt**: Après 5 échecs avec Claude Code, j'ai douté de pouvoir déployer du tout.
+**Current satisfaction**: Cursor a résolu le problème en 3 itérations. Le projet est EN PRODUCTION !
+**If you stopped now, what would you regret?**: Rien — le projet est complet et déployé.
+**One word**: Victorieux
 
 ---
 
@@ -225,6 +310,12 @@ affiche la réponse générée par l'assistant.
 **2026-01-28**: Pour Railway, un requirements.txt minimal est préférable à un pip freeze complet - moins de dépendances = moins de problèmes potentiels.
 
 **2026-01-28**: Séparer l'appel IA de la capture de données utilisateur permet de montrer de la valeur AVANT de demander des informations personnelles.
+
+**2026-01-28**: Nixpacks + Python + Nix = terrain miné. Toujours utiliser un venv pour les projets Python sur Railway avec Nixpacks.
+
+**2026-01-28**: Les fichiers de configuration Railway peuvent se "surcharger" mutuellement (railway.toml > railway.json > Procfile > nixpacks.toml). S'assurer qu'ils sont tous alignés.
+
+**2026-01-28**: Différents outils IA ont différentes forces. Claude Code excelle en architecture et refactoring. Cursor brille pour le debugging itératif avec feedback en temps réel.
 
 ---
 
