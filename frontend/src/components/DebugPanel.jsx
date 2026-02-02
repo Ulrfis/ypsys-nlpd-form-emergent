@@ -227,7 +227,7 @@ export const DebugPanel = () => {
             </button>
           </div>
           <p className="text-sm text-white/80">
-            Cmd+Shift+D (Mac) ou Ctrl+Shift+D (Windows/Linux) pour fermer
+            Cliquez sur ❌ ou sur le fond pour fermer
           </p>
         </div>
 

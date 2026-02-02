@@ -45,24 +45,15 @@ export const FormFlow = () => {
     setOpenAIDebugContext(debugContext);
   }, [debugContext]);
 
-  // Add keyboard shortcut for debug mode
+  // Activate debug mode if ?debug=true is in URL
   useEffect(() => {
-    const handleKeyPress = (e) => {
-      // Ignore if user is typing in an input/textarea
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugParam = urlParams.get('debug');
 
-      // Cmd+Shift+D (Mac) or Ctrl+Shift+D (Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === 'KeyD') {
-        e.preventDefault();
-        toggleDebugMode();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [toggleDebugMode]);
+    if (debugParam === 'true' && !debugContext.isDebugMode) {
+      toggleDebugMode();
+    }
+  }, [debugContext.isDebugMode, toggleDebugMode]);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {

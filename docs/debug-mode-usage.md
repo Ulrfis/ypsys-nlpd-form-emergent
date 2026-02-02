@@ -6,18 +6,21 @@ Le mode debug est une fonctionnalité de développement qui permet de visualiser
 
 ## Activation du Mode Debug
 
-### Raccourci clavier
+### Paramètre URL
 
-**Mac** : `Cmd + Shift + D`
-**Windows/Linux** : `Ctrl + Shift + D`
+Ajouter `?debug=true` à l'URL de l'application :
 
-Le panneau de debug s'ouvre depuis le côté droit de l'écran avec une animation fluide.
+```
+http://localhost:3000?debug=true
+```
+
+Le panneau de debug s'ouvre automatiquement depuis le côté droit de l'écran avec une animation fluide.
 
 ### Désactivation
 
-- Utiliser le même raccourci clavier
 - Cliquer sur le bouton ❌ en haut à droite du panneau
 - Cliquer sur le fond assombri à l'extérieur du panneau
+- Retirer le paramètre `?debug=true` de l'URL et recharger la page
 
 ## Interface du Panneau Debug
 
@@ -26,7 +29,7 @@ Le panneau de debug s'ouvre depuis le côté droit de l'écran avec une animatio
 L'en-tête affiche :
 - **Titre** : "Debug Panel"
 - **Compteur** : Nombre total de logs capturés
-- **Indication** : Rappel du raccourci clavier pour fermer
+- **Indication** : Instructions pour fermer le panneau
 
 ### Barre d'outils
 
@@ -244,7 +247,7 @@ L'export JSON peut être utilisé pour :
 
 ### 1. Vérifier que les données du formulaire sont correctement envoyées
 
-1. Activer le mode debug (`Cmd+Shift+D`)
+1. Activer le mode debug (ajouter `?debug=true` à l'URL)
 2. Remplir et soumettre le formulaire
 3. Chercher le log **⭐ Form Data** (badge jaune)
 4. Vérifier que toutes les réponses sont présentes dans le payload

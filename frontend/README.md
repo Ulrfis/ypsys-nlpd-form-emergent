@@ -47,11 +47,13 @@ The application includes a comprehensive debug mode for development that display
 
 ### Activation
 
-**Keyboard shortcut:**
-- Mac: `Cmd + Shift + D`
-- Windows/Linux: `Ctrl + Shift + D`
+Add `?debug=true` to the application URL:
 
-A debug panel slides in from the right side of the screen.
+```
+http://localhost:3000?debug=true
+```
+
+The debug panel automatically opens and slides in from the right side of the screen.
 
 ### Features
 
