@@ -85,10 +85,10 @@ export const LandingPage = ({ onStart }) => {
                 <AlertTriangle className="w-5 h-5 text-warning" />
               </div>
               <div className="text-left">
-                <p className="text-foreground font-medium mb-2">La différence?</p>
                 <p className="text-sm text-muted-foreground">
-                  Elles découvrent leurs failles trop tard: pendant un <strong>audit du PFPDT</strong>, 
-                  après un <strong>incident de sécurité</strong>, ou lors d&apos;une <strong>réclamation d&apos;un patient/client</strong>.
+                  Elles découvrent leurs failles trop tard : après un{' '}
+                  <strong>incident de sécurité</strong>, ou lors d&apos;une{' '}
+                  <strong>réclamation d&apos;un patient/client</strong>.
                 </p>
               </div>
             </div>
