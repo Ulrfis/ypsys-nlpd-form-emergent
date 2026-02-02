@@ -14,6 +14,7 @@ import {
   TrendingUp,
   FileText
 } from 'lucide-react';
+import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 
 const scoreConfig = {
   green: {
@@ -221,7 +222,7 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
               <CardContent>
                 <div className="relative">
                   <iframe
-                    src="https://tidycal.com/memoways/30min"
+                    src={BOOKING_CALENDAR_URL}
                     title="Réserver une consultation"
                     className="w-full border-0 rounded-lg"
                     style={{ height: '600px', minHeight: '600px' }}
@@ -241,7 +242,7 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
                     <Button
                       variant="premium"
                       size="lg"
-                      onClick={() => window.open('https://tidycal.com/memoways/30min', '_blank')}
+                      onClick={() => window.open(BOOKING_CALENDAR_URL, '_blank')}
                     >
                       Ouvrir le calendrier dans un nouvel onglet
                       <ArrowRight className="w-4 h-4 ml-2" />

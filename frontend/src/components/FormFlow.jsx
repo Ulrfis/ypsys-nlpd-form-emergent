@@ -12,6 +12,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
 import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
 import { saveSubmission, setDebugContext } from '@/lib/supabase';
+import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 import { useDebugContext } from '@/context/DebugContext';
 
 // Steps in the form flow
@@ -216,9 +217,9 @@ export const FormFlow = () => {
     }
   }, [buildAnswerTexts, score, openaiResponse]);
 
-  // Book consultation
+  // Book consultation (Outlook Book With Me)
   const handleBookConsultation = useCallback(() => {
-    alert('Fonctionnalité de réservation à venir!');
+    window.open(BOOKING_CALENDAR_URL, '_blank');
   }, []);
 
   // Get current question and section
