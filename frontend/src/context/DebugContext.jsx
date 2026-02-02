@@ -104,7 +104,11 @@ export function DebugProvider({ children }) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+
+    // Clean up blob URL after a short delay to ensure download starts
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
   }, [logs]);
 
   const toggleFilter = useCallback((filterType) => {
