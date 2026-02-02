@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDebugContext } from '@/context/DebugContext';
-import { X, ChevronDown, ChevronUp, Download, Trash2, Database, Cpu } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Download, Trash2, Database, Cpu, List } from 'lucide-react';
 
 /**
  * Filter buttons for log types
  */
 const FilterButtons = ({ activeFilters, toggleFilter }) => {
   const filters = [
+    { id: 'all', label: 'Tous', icon: List, color: 'bg-gray-500' },
     { id: 'supabase', label: 'Supabase', icon: Database, color: 'bg-green-500' },
     { id: 'openai', label: 'OpenAI', icon: Cpu, color: 'bg-blue-500' },
   ];
@@ -16,7 +17,7 @@ const FilterButtons = ({ activeFilters, toggleFilter }) => {
     <div className="flex gap-2 mb-4">
       {filters.map(filter => {
         const Icon = filter.icon;
-        const isActive = activeFilters.includes(filter.id);
+        const isActive = activeFilters.has('all') || activeFilters.has(filter.id);
 
         return (
           <button
@@ -177,17 +178,39 @@ const LogEntry = ({ log, index }) => {
 };
 
 /**
+ * Side tab to open the debug panel (visible when debug mode is on and panel is closed)
+ */
+const DebugTab = ({ onClick, logCount }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="fixed right-0 top-1/2 -translate-y-1/2 z-40 flex items-center gap-1 py-2 pl-3 pr-2 rounded-l-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg hover:pl-4 transition-all"
+    title="Ouvrir le panneau Debug"
+  >
+    <span className="text-sm font-medium whitespace-nowrap">Debug</span>
+    {logCount > 0 && (
+      <span className="px-1.5 py-0.5 rounded bg-white/20 text-xs font-medium">
+        {logCount}
+      </span>
+    )}
+  </button>
+);
+
+/**
  * Main Debug Panel Component
  */
 export const DebugPanel = () => {
   const {
     isDebugMode,
-    toggleDebugMode,
+    isPanelOpen,
+    openPanel,
+    closePanel,
     getFilteredLogs,
     clearLogs,
     exportLogs,
     activeFilters,
     toggleFilter,
+    allLogs,
   } = useDebugContext();
 
   const logs = getFilteredLogs();
@@ -195,83 +218,97 @@ export const DebugPanel = () => {
   if (!isDebugMode) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-      onClick={toggleDebugMode}
-    >
-      <motion.div
-        initial={{ x: '100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '100%' }}
-        transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold">Debug Panel</h2>
-              <span className="px-2 py-1 bg-white/20 rounded text-sm">
-                {logs.length} logs
-              </span>
-            </div>
-            <button
-              onClick={toggleDebugMode}
-              className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            >
-              <X size={24} />
-            </button>
-          </div>
-          <p className="text-sm text-white/80">
-            Cliquez sur ❌ ou sur le fond pour fermer
-          </p>
-        </div>
+    <>
+      {/* Side tab: visible when panel is closed, click to open */}
+      {!isPanelOpen && (
+        <DebugTab onClick={openPanel} logCount={allLogs?.length ?? 0} />
+      )}
 
-        {/* Toolbar */}
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-          <FilterButtons activeFilters={activeFilters} toggleFilter={toggleFilter} />
-          <div className="flex gap-2">
-            <button
-              onClick={exportLogs}
-              className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+      {/* Full panel: overlay + drawer, close via X or overlay click */}
+      <AnimatePresence>
+        {isPanelOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+            onClick={closePanel}
+          >
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              className="absolute right-0 top-0 bottom-0 w-full max-w-2xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
             >
-              <Download size={16} />
-              Exporter JSON
-            </button>
-            <button
-              onClick={clearLogs}
-              className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
-            >
-              <Trash2 size={16} />
-              Effacer
-            </button>
-          </div>
-        </div>
+              {/* Header */}
+              <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold">Debug Panel</h2>
+                    <span className="px-2 py-1 bg-white/20 rounded text-sm">
+                      {logs.length} logs
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closePanel}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                    title="Fermer le panneau"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+                <p className="text-sm text-white/80">
+                  Cliquez sur ❌ ou sur le fond pour fermer · Réouvrir via l’onglet « Debug »
+                </p>
+              </div>
 
-        {/* Logs list */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {logs.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <Database size={48} className="mx-auto mb-4 opacity-50" />
-              <p className="text-lg font-medium">Aucun log disponible</p>
-              <p className="text-sm mt-2">
-                Les logs apparaîtront ici au fur et à mesure des interactions avec Supabase et OpenAI
-              </p>
-            </div>
-          ) : (
-            <AnimatePresence>
-              {logs.map((log, index) => (
-                <LogEntry key={log.id} log={log} index={index} />
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
-      </motion.div>
-    </motion.div>
+              {/* Toolbar */}
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <FilterButtons activeFilters={activeFilters} toggleFilter={toggleFilter} />
+                <div className="flex gap-2">
+                  <button
+                    onClick={exportLogs}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                  >
+                    <Download size={16} />
+                    Exporter JSON
+                  </button>
+                  <button
+                    onClick={clearLogs}
+                    className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                  >
+                    <Trash2 size={16} />
+                    Effacer
+                  </button>
+                </div>
+              </div>
+
+              {/* Logs list */}
+              <div className="flex-1 overflow-y-auto p-4">
+                {logs.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                    <Database size={48} className="mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">Aucun log disponible</p>
+                    <p className="text-sm mt-2">
+                      Les logs apparaîtront ici au fur et à mesure des interactions avec Supabase et OpenAI
+                    </p>
+                  </div>
+                ) : (
+                  <AnimatePresence>
+                    {logs.map((log, index) => (
+                      <LogEntry key={log.id} log={log} index={index} />
+                    ))}
+                  </AnimatePresence>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 

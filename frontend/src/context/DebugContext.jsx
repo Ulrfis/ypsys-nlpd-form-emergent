@@ -9,6 +9,7 @@ const MAX_AGE_DAYS = 7;
 
 export function DebugProvider({ children }) {
   const [isDebugMode, setIsDebugMode] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [logs, setLogs] = useState([]);
   const [activeFilters, setActiveFilters] = useState(new Set(['all']));
 
@@ -52,6 +53,15 @@ export function DebugProvider({ children }) {
   const toggleDebugMode = useCallback(() => {
     setIsDebugMode(prev => !prev);
   }, []);
+
+  const setDebugMode = useCallback((enabled) => {
+    const on = Boolean(enabled);
+    setIsDebugMode(on);
+    if (on) setIsPanelOpen(true);
+  }, []);
+
+  const openPanel = useCallback(() => setIsPanelOpen(true), []);
+  const closePanel = useCallback(() => setIsPanelOpen(false), []);
 
   const addLog = useCallback((log) => {
     if (!isDebugMode) return log.id;
@@ -148,7 +158,11 @@ export function DebugProvider({ children }) {
 
   const value = {
     isDebugMode,
+    isPanelOpen,
     toggleDebugMode,
+    setDebugMode,
+    openPanel,
+    closePanel,
     logs: getFilteredLogs(),
     allLogs: logs,
     activeFilters,

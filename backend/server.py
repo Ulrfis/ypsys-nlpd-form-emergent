@@ -91,6 +91,18 @@ class StatusCheckCreate(BaseModel):
     client_name: str
 
 
+class AnalyzePayload(BaseModel):
+    """Payload for OpenAI analysis (matches frontend buildAnswerTexts + score)"""
+    user: Dict[str, Any]
+    answers: Dict[str, str]
+    score: Dict[str, Any]
+    has_email: bool = False
+
+
+class AnalyzeRequest(BaseModel):
+    payload: AnalyzePayload
+
+
 # ============ IN-MEMORY STORAGE (for Railway without MongoDB) ============
 # Note: In production, data is stored in Supabase from the frontend
 # This is just for API compatibility
@@ -206,6 +218,105 @@ async def create_status_check(input: StatusCheckCreate):
 @api_router.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
     return status_checks_store
+
+
+# ============ OPENAI ANALYSIS PROXY (avoids CORS / browser API key) ============
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_ASSISTANT_ID = os.environ.get("OPENAI_ASSISTANT_ID")
+
+
+def _classify_lead(risk_level: str) -> str:
+    mapping = {"red": "HOT", "orange": "WARM", "green": "COLD"}
+    return mapping.get(risk_level, "WARM")
+
+
+def _fallback_response(payload: dict) -> dict:
+    user = payload.get("user", {})
+    score = payload.get("score", {})
+    company = user.get("company", "Votre organisation")
+    first_name = user.get("first_name", "Utilisateur")
+    normalized = score.get("normalized", 0)
+    level = score.get("level", "orange")
+    teasers = {
+        "green": f"Bravo {first_name}! Votre organisation {company} obtient un score de {normalized}/10...",
+        "orange": f"{first_name}, votre organisation {company} obtient un score de {normalized}/10...",
+        "red": f"Attention {first_name}! Votre organisation {company} présente un score de {normalized}/10...",
+    }
+    return {
+        "teaser": teasers.get(level, teasers["orange"]),
+        "lead_temperature": _classify_lead(level),
+        "email_user": None,
+        "email_sales": None,
+    }
+
+
+@api_router.post("/analyze")
+async def analyze(request: AnalyzeRequest):
+    """Proxy OpenAI Assistant API so the frontend does not call OpenAI from the browser (CORS / key exposure)."""
+    if not OPENAI_API_KEY or not OPENAI_ASSISTANT_ID:
+        logger.warning("OpenAI not configured, returning fallback response")
+        return _fallback_response(request.payload.model_dump())
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    payload_dict = request.payload.model_dump()
+    payload_str = __import__("json").dumps(payload_dict, indent=2)
+
+    try:
+        thread = client.beta.threads.create()
+        client.beta.threads.messages.create(thread.id, role="user", content=payload_str)
+        run = client.beta.threads.runs.create(thread.id, assistant_id=OPENAI_ASSISTANT_ID)
+
+        max_wait = 45
+        start = __import__("time").time()
+        while run.status in ("queued", "in_progress"):
+            if __import__("time").time() - start > max_wait:
+                raise HTTPException(status_code=504, detail="OpenAI analysis timeout")
+            __import__("time").sleep(1.5)
+            run = client.beta.threads.runs.retrieve(thread.id, run.id)
+
+        if run.status != "completed":
+            raise HTTPException(
+                status_code=502,
+                detail=f"OpenAI run failed with status: {run.status}",
+            )
+
+        messages = client.beta.threads.messages.list(thread.id)
+        assistant_msg = next((m for m in messages.data if m.role == "assistant"), None)
+        if not assistant_msg or not assistant_msg.content or not assistant_msg.content[0]:
+            raise HTTPException(status_code=502, detail="No response from OpenAI assistant")
+
+        text = assistant_msg.content[0].text.value
+        json_str = text
+        if "```" in text:
+            import re
+            m = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+            if m:
+                json_str = m.group(1).strip()
+        try:
+            response = __import__("json").loads(json_str)
+        except Exception as e:
+            logger.warning("OpenAI response not valid JSON, using raw teaser: %s", e)
+            return {
+                "teaser": text[:800],
+                "lead_temperature": _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
+                "email_user": None,
+                "email_sales": None,
+            }
+
+        return {
+            "teaser": response.get("teaser") or response.get("summary") or _fallback_response(payload_dict)["teaser"],
+            "lead_temperature": response.get("lead_temperature") or _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
+            "email_user": response.get("email_user"),
+            "email_sales": response.get("email_sales"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("OpenAI analysis error: %s", e)
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 # Include the router in the main app

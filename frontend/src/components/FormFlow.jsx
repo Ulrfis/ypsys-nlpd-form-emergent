@@ -26,7 +26,7 @@ const STEPS = {
 
 export const FormFlow = () => {
   const debugContext = useDebugContext();
-  const { toggleDebugMode } = debugContext;
+  const { toggleDebugMode, setDebugMode } = debugContext;
   const [currentStep, setCurrentStep] = useState(STEPS.LANDING);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -45,16 +45,14 @@ export const FormFlow = () => {
     setOpenAIDebugContext(debugContext);
   }, [debugContext]);
 
-  // Activate debug mode if ?debug=true is in URL
+  // Activate debug mode if ?debug=true is in URL (set explicitly so panel opens)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const debugParam = urlParams.get('debug');
-
-    if (debugParam === 'true' && !debugContext.isDebugMode) {
-      toggleDebugMode();
+    if (debugParam === 'true') {
+      setDebugMode(true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [setDebugMode]);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {

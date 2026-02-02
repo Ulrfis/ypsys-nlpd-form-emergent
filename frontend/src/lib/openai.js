@@ -3,6 +3,7 @@ import { createLog, createLogUpdate } from './debugLogger';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 const OPENAI_ASSISTANT_ID = process.env.REACT_APP_OPENAI_ASSISTANT_ID;
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, '');
 
 // Global reference to debug context (set by useDebugContext)
 let openaiDebugContextRef = null;
@@ -24,7 +25,7 @@ function updateDebugLog(logId, update) {
   }
 }
 
-// Create OpenAI client
+// Create OpenAI client (only used when no backend proxy)
 const openai = OPENAI_API_KEY ? new OpenAI({
   apiKey: OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // For development - should be moved to server in production
@@ -41,12 +42,90 @@ function withTimeout(promise, timeoutMs, errorMessage) {
 }
 
 /**
- * Generate analysis using OpenAI Assistant API
+ * Generate analysis via backend proxy (avoids CORS and exposes API key only server-side)
+ */
+async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
+  const url = `${BACKEND_URL}/api/analyze`;
+  const logId = addDebugLog(createLog('openai', 'analyze.proxy', {
+    endpoint: url,
+    method: 'POST',
+    payload: {
+      payload_summary: {
+        user: payload.user,
+        score: payload.score,
+        answer_count: Object.keys(payload.answers || {}).length,
+      },
+    },
+    isHighlighted: true,
+    highlightReason: 'openai_response',
+  }));
+
+  const startTime = Date.now();
+  onStatusUpdate('creating_thread', 'Création du fil de discussion...');
+  onStatusUpdate('sending_data', 'Envoi des données au conseiller IA...');
+  onStatusUpdate('analyzing', 'Analyse de vos réponses en cours...');
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload }),
+    });
+
+    const duration = Date.now() - startTime;
+    const text = await res.text();
+    let data;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = { raw: text?.substring(0, 500) };
+    }
+
+    if (!res.ok) {
+      updateDebugLog(logId, createLogUpdate(
+        { error: data?.detail || data?.message || res.statusText, data },
+        duration,
+        'error'
+      ));
+      onStatusUpdate('complete', 'Analyse terminée!');
+      return generateFallbackResponse(payload);
+    }
+
+    updateDebugLog(logId, createLogUpdate(
+      { data: { teaser: data?.teaser, lead_temperature: data?.lead_temperature, email_user: data?.email_user, email_sales: data?.email_sales, full: data } },
+      duration,
+      'success'
+    ));
+    onStatusUpdate('complete', 'Analyse terminée!');
+
+    return {
+      teaser: data.teaser || generateDefaultTeaser(payload),
+      lead_temperature: data.lead_temperature || classifyLead(payload.score?.level),
+      email_user: data.email_user ?? null,
+      email_sales: data.email_sales ?? null,
+    };
+  } catch (err) {
+    updateDebugLog(logId, createLogUpdate(
+      { error: err.message, stack: err.stack },
+      Date.now() - startTime,
+      'error'
+    ));
+    onStatusUpdate('complete', 'Analyse terminée!');
+    return generateFallbackResponse(payload);
+  }
+}
+
+/**
+ * Generate analysis using OpenAI Assistant API (direct or via backend)
  * @param {Object} payload - The form data payload
  * @param {Function} onStatusUpdate - Callback for status updates
  * @returns {Object} - { teaser, lead_temperature, email_user, email_sales }
  */
 export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
+  if (BACKEND_URL) {
+    return generateAnalysisViaBackend(payload, onStatusUpdate);
+  }
+
   if (!openai || !OPENAI_ASSISTANT_ID) {
     console.warn('OpenAI not configured, using fallback response');
     onStatusUpdate('generating', 'Génération des recommandations...');
