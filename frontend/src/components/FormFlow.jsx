@@ -9,7 +9,7 @@ import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { generateAnalysis } from '@/lib/openai';
+import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
 import { saveSubmission, setDebugContext } from '@/lib/supabase';
 import { useDebugContext } from '@/context/DebugContext';
 
@@ -38,9 +38,10 @@ export const FormFlow = () => {
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
 
-  // Initialize debug context for supabase module
+  // Initialize debug context for supabase and openai modules
   useEffect(() => {
     setDebugContext(debugContext);
+    setOpenAIDebugContext(debugContext);
   }, [debugContext]);
 
   // Add keyboard shortcut for debug mode

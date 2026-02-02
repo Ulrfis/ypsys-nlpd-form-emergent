@@ -1,7 +1,28 @@
 import OpenAI from 'openai';
+import { createLog, createLogUpdate } from './debugLogger';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 const OPENAI_ASSISTANT_ID = process.env.REACT_APP_OPENAI_ASSISTANT_ID;
+
+// Global reference to debug context (set by useDebugContext)
+let openaiDebugContextRef = null;
+
+export function setOpenAIDebugContext(context) {
+  openaiDebugContextRef = context;
+}
+
+function addDebugLog(log) {
+  if (openaiDebugContextRef?.isDebugMode && openaiDebugContextRef?.addLog) {
+    return openaiDebugContextRef.addLog(log);
+  }
+  return null;
+}
+
+function updateDebugLog(logId, update) {
+  if (openaiDebugContextRef?.isDebugMode && openaiDebugContextRef?.updateLog && logId) {
+    openaiDebugContextRef.updateLog(logId, update);
+  }
+}
 
 // Create OpenAI client
 const openai = OPENAI_API_KEY ? new OpenAI({
@@ -36,18 +57,50 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
 
   try {
     onStatusUpdate('creating_thread', 'Création du fil de discussion...');
-    
+
+    // Log thread creation
+    const threadLogId = addDebugLog(createLog('openai', 'threads.create', {
+      endpoint: 'threads.create',
+      method: 'POST',
+      payload: null,
+    }));
+
+    const threadStartTime = Date.now();
+
     // Create thread with timeout
     const thread = await withTimeout(
       openai.beta.threads.create(),
       10000,
       'Thread creation timeout'
     );
+
+    updateDebugLog(threadLogId, createLogUpdate(
+      { data: { thread_id: thread.id } },
+      Date.now() - threadStartTime,
+      'success'
+    ));
     
     onStatusUpdate('sending_data', 'Envoi des données au conseiller IA...');
-    
+
+    // Log message creation
+    const messageLogId = addDebugLog(createLog('openai', 'threads.messages.create', {
+      endpoint: `threads/${thread.id}/messages`,
+      method: 'POST',
+      payload: {
+        role: 'user',
+        content_length: JSON.stringify(payload).length,
+        payload_summary: {
+          user: payload.user,
+          score: payload.score,
+          answer_count: Object.keys(payload.answers || {}).length,
+        },
+      },
+    }));
+
+    const messageStartTime = Date.now();
+
     // Send message with form data
-    await withTimeout(
+    const message = await withTimeout(
       openai.beta.threads.messages.create(thread.id, {
         role: "user",
         content: JSON.stringify(payload, null, 2)
@@ -55,9 +108,26 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
       10000,
       'Message creation timeout'
     );
+
+    updateDebugLog(messageLogId, createLogUpdate(
+      { data: { message_id: message.id } },
+      Date.now() - messageStartTime,
+      'success'
+    ));
     
     onStatusUpdate('analyzing', 'Analyse de vos réponses en cours...');
-    
+
+    // Log run creation
+    const runLogId = addDebugLog(createLog('openai', 'threads.runs.create', {
+      endpoint: `threads/${thread.id}/runs`,
+      method: 'POST',
+      payload: {
+        assistant_id: OPENAI_ASSISTANT_ID,
+      },
+    }));
+
+    const runStartTime = Date.now();
+
     // Create run (don't use createAndPoll as it can hang)
     const run = await withTimeout(
       openai.beta.threads.runs.create(thread.id, {
@@ -66,25 +136,48 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
       10000,
       'Run creation timeout'
     );
+
+    updateDebugLog(runLogId, createLogUpdate(
+      { data: { run_id: run.id, status: run.status } },
+      Date.now() - runStartTime,
+      'success'
+    ));
     
     // Poll for completion with timeout
     let runStatus = run;
     const startTime = Date.now();
     const maxWaitTime = 45000; // 45 seconds max
-    
+    let pollCount = 0;
+
     while (runStatus.status === 'queued' || runStatus.status === 'in_progress') {
       if (Date.now() - startTime > maxWaitTime) {
         throw new Error('Analysis timeout - taking too long');
       }
-      
+
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      pollCount++;
+
+      // Log status check
+      const pollLogId = addDebugLog(createLog('openai', 'threads.runs.retrieve', {
+        endpoint: `threads/${thread.id}/runs/${run.id}`,
+        method: 'GET',
+        payload: { poll_number: pollCount },
+      }));
+
+      const pollStartTime = Date.now();
+
       runStatus = await withTimeout(
         openai.beta.threads.runs.retrieve(thread.id, run.id),
         10000,
         'Status check timeout'
       );
-      
+
+      updateDebugLog(pollLogId, createLogUpdate(
+        { data: { status: runStatus.status, poll_number: pollCount } },
+        Date.now() - pollStartTime,
+        'success'
+      ));
+
       console.log('Run status:', runStatus.status);
     }
     
@@ -94,21 +187,41 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
     }
     
     onStatusUpdate('generating', 'Génération des recommandations...');
-    
+
+    // Log messages retrieval
+    const messagesLogId = addDebugLog(createLog('openai', 'threads.messages.list', {
+      endpoint: `threads/${thread.id}/messages`,
+      method: 'GET',
+      payload: null,
+    }));
+
+    const messagesStartTime = Date.now();
+
     // Get response
     const messages = await withTimeout(
       openai.beta.threads.messages.list(thread.id),
       10000,
       'Messages fetch timeout'
     );
-    
+
     const assistantMessage = messages.data.find(m => m.role === 'assistant');
-    
+
     if (!assistantMessage || !assistantMessage.content || !assistantMessage.content[0]) {
+      updateDebugLog(messagesLogId, createLogUpdate(
+        { error: 'No response from assistant' },
+        Date.now() - messagesStartTime,
+        'error'
+      ));
       throw new Error('No response from assistant');
     }
-    
+
     const responseText = assistantMessage.content[0].text.value;
+
+    updateDebugLog(messagesLogId, createLogUpdate(
+      { data: { message_count: messages.data.length } },
+      Date.now() - messagesStartTime,
+      'success'
+    ));
     
     // Try to parse as JSON
     try {
@@ -120,9 +233,35 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
       }
       
       const response = JSON.parse(jsonStr);
-      
+
+      // Log the final OpenAI response (HIGHLIGHTED)
+      const responseLogId = addDebugLog(createLog('openai', 'assistant.response.complete', {
+        endpoint: 'assistant_response',
+        method: 'RESULT',
+        payload: {
+          raw_text_length: responseText.length,
+          parsed_successfully: true,
+        },
+        isHighlighted: true,
+        highlightReason: 'openai_response',
+      }));
+
+      updateDebugLog(responseLogId, createLogUpdate(
+        {
+          data: {
+            teaser: response.teaser || response.summary || null,
+            lead_temperature: response.lead_temperature || null,
+            email_user: response.email_user || null,
+            email_sales: response.email_sales || null,
+            full_response: response,
+          },
+        },
+        0,
+        'success'
+      ));
+
       onStatusUpdate('complete', 'Analyse terminée!');
-      
+
       return {
         teaser: response.teaser || response.summary || generateDefaultTeaser(payload),
         lead_temperature: response.lead_temperature || classifyLead(payload.score.level),
@@ -132,9 +271,33 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
     } catch (parseError) {
       // If JSON parsing fails, use the raw text as teaser
       console.warn('Failed to parse assistant response as JSON:', parseError);
-      
+
+      // Log the parsing error with raw response
+      const parseErrorLogId = addDebugLog(createLog('openai', 'assistant.response.parse_failed', {
+        endpoint: 'assistant_response',
+        method: 'RESULT',
+        payload: {
+          raw_text_length: responseText?.length || 0,
+          parsed_successfully: false,
+          error: parseError.message,
+        },
+        isHighlighted: true,
+        highlightReason: 'openai_response',
+      }));
+
+      updateDebugLog(parseErrorLogId, createLogUpdate(
+        {
+          data: {
+            raw_text: responseText?.substring(0, 500) || null,
+            error: parseError.message,
+          },
+        },
+        0,
+        'error'
+      ));
+
       onStatusUpdate('complete', 'Analyse terminée!');
-      
+
       return {
         teaser: responseText.substring(0, 800),
         lead_temperature: classifyLead(payload.score.level),
@@ -145,6 +308,23 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
     
   } catch (error) {
     console.error('OpenAI API error:', error);
+
+    // Log the error
+    const errorLogId = addDebugLog(createLog('openai', 'assistant.error', {
+      endpoint: 'assistant_api',
+      method: 'ERROR',
+      payload: null,
+    }));
+
+    updateDebugLog(errorLogId, createLogUpdate(
+      {
+        error: error.message,
+        stack: error.stack,
+      },
+      0,
+      'error'
+    ));
+
     onStatusUpdate('generating', 'Génération des recommandations...');
     await new Promise(resolve => setTimeout(resolve, 1500));
     onStatusUpdate('complete', 'Analyse terminée!');
