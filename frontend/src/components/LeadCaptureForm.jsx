@@ -22,14 +22,14 @@ import { User, Building2, Mail, MapPin, Users, Briefcase, ArrowRight, Shield, Ch
 
 export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    companyName: '',
-    companySize: '',
-    industry: '',
-    canton: '',
-    consentMarketing: false,
+    firstName: '', // Optional - now in collapsible section
+    lastName: '', // Required - primary field
+    email: '', // Required
+    companyName: '', // Required - moved from optional
+    companySize: '', // Optional
+    industry: '', // Optional
+    canton: '', // Optional
+    consentMarketing: false, // Required
   });
 
   const [errors, setErrors] = useState({});
@@ -37,9 +37,12 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'Prénom requis';
+
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = 'Nom requis';
+    }
+    if (!formData.companyName.trim()) {
+      newErrors.companyName = 'Nom de l\'entreprise requis';
     }
     if (!formData.email.trim()) {
       newErrors.email = 'Email requis';
@@ -92,21 +95,39 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Required Fields */}
             <div className="space-y-4">
-              {/* First Name */}
+              {/* Last Name */}
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="flex items-center gap-2">
+                <Label htmlFor="lastName" className="flex items-center gap-2">
                   <User className="w-4 h-4 text-muted-foreground" />
-                  Prénom <span className="text-danger">*</span>
+                  Nom <span className="text-danger">*</span>
                 </Label>
                 <Input
-                  id="firstName"
-                  value={formData.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
-                  placeholder="Jean"
-                  className={errors.firstName ? 'border-danger' : ''}
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  placeholder="Dupont"
+                  className={errors.lastName ? 'border-danger' : ''}
                 />
-                {errors.firstName && (
-                  <p className="text-sm text-danger">{errors.firstName}</p>
+                {errors.lastName && (
+                  <p className="text-sm text-danger">{errors.lastName}</p>
+                )}
+              </div>
+
+              {/* Company Name */}
+              <div className="space-y-2">
+                <Label htmlFor="companyName" className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  Nom de l'entreprise <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  id="companyName"
+                  value={formData.companyName}
+                  onChange={(e) => handleChange('companyName', e.target.value)}
+                  placeholder="Cabinet Médical Lausanne SA"
+                  className={errors.companyName ? 'border-danger' : ''}
+                />
+                {errors.companyName && (
+                  <p className="text-sm text-danger">{errors.companyName}</p>
                 )}
               </div>
 
@@ -143,31 +164,17 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent className="space-y-4 pt-4">
-                {/* Last Name */}
+                {/* First Name */}
                 <div className="space-y-2">
-                  <Label htmlFor="lastName" className="flex items-center gap-2">
+                  <Label htmlFor="firstName" className="flex items-center gap-2">
                     <User className="w-4 h-4 text-muted-foreground" />
-                    Nom
+                    Prénom
                   </Label>
                   <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleChange('lastName', e.target.value)}
-                    placeholder="Dupont"
-                  />
-                </div>
-
-                {/* Company Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="companyName" className="flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-muted-foreground" />
-                    Nom de l'entreprise
-                  </Label>
-                  <Input
-                    id="companyName"
-                    value={formData.companyName}
-                    onChange={(e) => handleChange('companyName', e.target.value)}
-                    placeholder="Cabinet Médical Lausanne SA"
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleChange('firstName', e.target.value)}
+                    placeholder="Jean"
                   />
                 </div>
 
@@ -253,12 +260,12 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
                   className={errors.consentMarketing ? 'border-danger' : ''}
                 />
                 <div className="flex-1">
-                  <Label 
-                    htmlFor="consent" 
+                  <Label
+                    htmlFor="consent"
                     className="text-sm font-normal cursor-pointer"
                   >
-                    J'accepte de recevoir mes résultats et des recommandations pour 
-                    sécuriser ma conformité nLPD. <span className="text-danger">*</span>
+                    J'accepte de recevoir mes résultats pour sécuriser la conformité nLPD
+                    de ma société/cabinet et d'être contacté par YPSYS. <span className="text-danger">*</span>
                   </Label>
                   {errors.consentMarketing && (
                     <p className="text-sm text-danger mt-1">{errors.consentMarketing}</p>
