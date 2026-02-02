@@ -153,6 +153,7 @@ export function DebugProvider({ children }) {
     allLogs: logs,
     activeFilters,
     toggleFilter,
+    getFilteredLogs,
     addLog,
     updateLog,
     clearLogs,

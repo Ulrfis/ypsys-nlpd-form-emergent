@@ -53,7 +53,8 @@ export const FormFlow = () => {
     if (debugParam === 'true' && !debugContext.isDebugMode) {
       toggleDebugMode();
     }
-  }, [debugContext.isDebugMode, toggleDebugMode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
