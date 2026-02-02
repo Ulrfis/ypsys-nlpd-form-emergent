@@ -3,9 +3,10 @@ import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { 
-  Sparkles, 
-  AlertTriangle, 
+import ScoreGauge from './ScoreGauge';
+import {
+  Sparkles,
+  AlertTriangle,
   CheckCircle,
   XCircle,
   Mail,
@@ -14,6 +15,20 @@ import {
   Target,
   Users
 } from 'lucide-react';
+
+// Function to generate personalized score messages
+const getScoreMessage = (score, firstName = '') => {
+  const percentage = Math.round(score.normalized * 10);
+  const name = firstName ? ` ${firstName}` : '';
+
+  if (percentage >= 70) {
+    return `Bravo${name}! Votre organisation obtient un score de ${percentage}%, ce qui indique une bonne maîtrise des aspects fondamentaux de la protection des données. Toutefois, quelques améliorations peuvent encore être apportées pour atteindre une conformité optimale.`;
+  } else if (percentage >= 31) {
+    return `Votre organisation obtient un score de ${percentage}%. Des lacunes significatives ont été identifiées dans votre dispositif de conformité nLPD. Des mesures correctives prioritaires sont nécessaires pour réduire les risques juridiques et protéger vos données sensibles.`;
+  } else {
+    return `Attention${name}! Votre organisation présente un score de ${percentage}%, révélant des failles critiques dans votre conformité nLPD. Sans action rapide, vous vous exposez à des sanctions pouvant atteindre CHF 250'000, ainsi qu'à des risques majeurs pour vos données et votre réputation.`;
+  }
+};
 
 const scoreConfig = {
   green: {
@@ -27,7 +42,7 @@ const scoreConfig = {
   orange: {
     color: 'warning',
     icon: AlertTriangle,
-    title: 'Attention requise',
+    title: 'Vigilance requise',
     bgColor: 'bg-warning/10',
     borderColor: 'border-warning/30',
     textColor: 'text-warning',
@@ -42,7 +57,7 @@ const scoreConfig = {
   },
 };
 
-export const ResultsPreview = ({ score, teaser, onRequestReport }) => {
+export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' }) => {
   const config = scoreConfig[score.riskLevel] || scoreConfig.orange;
   const ScoreIcon = config.icon;
 
@@ -73,20 +88,10 @@ export const ResultsPreview = ({ score, teaser, onRequestReport }) => {
             </p>
           </div>
 
-          {/* Score Card */}
-          <Card className="border-2 border-border shadow-md mb-6">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground mb-2 text-center">
-                Votre score de conformité
-              </p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-5xl font-bold text-foreground">
-                  {score.normalized}
-                </span>
-                <span className="text-2xl text-muted-foreground">/10</span>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Score Gauge */}
+          <div className="mb-6">
+            <ScoreGauge score={score.normalized * 10} size={220} animated={true} />
+          </div>
 
           {/* Risk Level Card */}
           <Card className={cn(
@@ -107,9 +112,7 @@ export const ResultsPreview = ({ score, teaser, onRequestReport }) => {
                     {config.title}
                   </h3>
                   <p className="text-sm text-foreground/80">
-                    {score.riskLevel === 'green' 
-                      ? "Votre conformité est globalement bonne. Quelques ajustements pourraient la renforcer."
-                      : "Plusieurs points critiques nécessitent une action immédiate."}
+                    {getScoreMessage(score, firstName)}
                   </p>
                 </div>
               </div>
