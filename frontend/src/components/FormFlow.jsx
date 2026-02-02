@@ -9,6 +9,7 @@ import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { DebugPanel } from '@/components/DebugPanel';
 import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
 import { saveSubmission, setDebugContext } from '@/lib/supabase';
 import { useDebugContext } from '@/context/DebugContext';
@@ -308,6 +309,9 @@ export const FormFlow = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Debug Panel */}
+      <DebugPanel />
     </div>
   );
 };
