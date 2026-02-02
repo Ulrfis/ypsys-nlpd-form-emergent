@@ -37,29 +37,19 @@ export const LandingPage = ({ onStart }) => {
             renforce les obligations de tous les cabinets médicaux, laboratoires et fiduciaires en Suisse.
           </p>
 
-          {/* Statistics Cards */}
+          {/* Statistics - Narrative Format */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid md:grid-cols-2 gap-6 mb-10 max-w-2xl mx-auto"
+            className="text-center mb-10 max-w-3xl mx-auto"
           >
-            <Card className="border-2 border-warning/20 bg-warning/5">
-              <CardContent className="p-8 text-center">
-                <div className="text-5xl font-extrabold text-warning mb-3">90%</div>
-                <p className="text-base font-semibold text-muted-foreground">
-                  des PME suisses pensent être conformes
-                </p>
-              </CardContent>
-            </Card>
-            <Card className="border-2 border-danger/20 bg-danger/5">
-              <CardContent className="p-8 text-center">
-                <div className="text-5xl font-extrabold text-danger mb-3">70%</div>
-                <p className="text-base font-semibold text-muted-foreground">
-                  ne le sont pas réellement
-                </p>
-              </CardContent>
-            </Card>
+            <p className="text-xl md:text-2xl text-foreground leading-relaxed">
+              <span className="text-3xl md:text-4xl font-extrabold text-warning">90%</span>{' '}
+              des PME suisses pensent être conformes, mais{' '}
+              <span className="text-3xl md:text-4xl font-extrabold text-danger">70%</span>{' '}
+              ne le sont pas réellement
+            </p>
           </motion.div>
 
           {/* CTA Button */}
