@@ -137,6 +137,7 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - L'appel OpenAI se fait côté client (à migrer vers Edge Function pour production)
 - Le formulaire est entièrement en français
 - Timeout OpenAI de 45 secondes avec fallback local
+- Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
 
 ---
 

@@ -14,6 +14,28 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ---
 
+## [0.5.0] - 2026-02-02
+
+### Modifié
+- Révision complète des textes des 15 questions du questionnaire nLPD
+- Réorganisation de l'ordre des réponses (rouge → vert) pour toutes les questions
+- Simplification des tooltips et explications
+- Remplacement des termes techniques par des formulations plus accessibles
+- Q5 : "Vos sauvegardes fonctionnent-elles vraiment?" → "Comment est organisée la sauvegarde des données sensibles?"
+- Q13 : "Votre équipe connaît-elle les règles de base nLPD?" → "Votre équipe est-elle sensibilisée aux risques de cyberattaque?"
+
+### Supprimé
+- Q9 : Option "Je ne sais pas si c'est obligatoire"
+- Q14 : Option "C'est réparti, mais pas formalisé"
+
+### Amélioré
+- Messages moins culpabilisants et plus orientés solution
+- Focus sur les principes nLPD plutôt que sur les sanctions PFPDT
+- Terminologie simplifiée : "MdP" → "mot de passe", "Chiffrement" → "Cryptage"
+- Questions plus directes et actionnables
+
+---
+
 ## [0.4.0] - 2026-01-28
 
 ### Ajouté

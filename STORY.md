@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-01-28
+**Last Updated**: 2026-02-02
 
 ---
 
@@ -220,6 +220,44 @@ cmd = "cd backend && /app/venv/bin/uvicorn server:app --host 0.0.0.0 --port ${PO
 
 ---
 
+### 2026-02-02 — Révision complète du questionnaire nLPD 🔷
+
+**Intent**: Améliorer la clarté, l'accessibilité et l'expérience utilisateur du questionnaire suite aux retours du client.
+
+**Prompt(s)**:
+```
+Mettre à jour le questionnaire selon les indications données dans le document joint
+```
+
+**Tool**: Claude Code
+
+**Outcome**:
+- 15 questions révisées avec textes simplifiés
+- Ordre des réponses réorganisé (non-conforme → conforme) pour toutes les questions
+- Suppression de 2 options redondantes (Q9, Q14)
+- Tooltips raccourcis et plus directs
+- Terminologie accessible : "MdP" → "mot de passe", "Chiffrement" → "Cryptage"
+- Ton moins culpabilisant, plus orienté action
+- Focus sur les principes nLPD plutôt que sur les sanctions
+
+**Changes détaillés** :
+- Q1-Q15 : Réorganisation des options (rouge/orange/vert → ordre logique)
+- Q5 : Question renommée "Comment est organisée la sauvegarde..." (au lieu de "fonctionnent-elles")
+- Q6 : "listant les accès" au lieu de "qui peut accéder à quoi"
+- Q8 : "Hors Europe" devient non-conforme (rouge) au lieu d'acceptable (orange)
+- Q13 : "sensibilisée aux risques de cyberattaque" au lieu de "connaît les règles nLPD"
+- Q14 : Option "réparti mais pas formalisé" supprimée (seulement 2 options désormais)
+
+**Friction**: Document de modifications fourni en .txt avec encodage UTF-8, nécessitant une lecture attentive pour bien interpréter les instructions.
+
+**Resolution**: Traitement systématique question par question avec suivi via TodoWrite pour garantir l'exhaustivité.
+
+**Surprise**: La réorganisation des options dans l'ordre "problématique → conforme" (au lieu de "conforme → problématique") améliore l'expérience : l'utilisateur voit d'abord ce qui ne va pas, puis la solution.
+
+**Time**: ~1h30
+
+---
+
 ## Pivots & Breakages
 
 ### 2026-01-27 — Clé Supabase incorrecte
@@ -297,6 +335,14 @@ cmd = "cd backend && /app/venv/bin/uvicorn server:app --host 0.0.0.0 --port ${PO
 **If you stopped now, what would you regret?**: Rien — le projet est complet et déployé.
 **One word**: Victorieux
 
+### 2026-02-02 — Pulse Check #4
+
+**Energy level**: 8/10
+**Current doubt**: Les modifications vont-elles vraiment améliorer l'expérience utilisateur ou juste changer les mots?
+**Current satisfaction**: La réorganisation des réponses donne un flow plus naturel. Les utilisateurs voient d'abord leurs problèmes, puis les solutions.
+**If you stopped now, what would you regret?**: Ne pas avoir testé le questionnaire avec de vrais utilisateurs pour valider ces améliorations.
+**One word**: Affiné
+
 ---
 
 ## Insights Vault
@@ -316,6 +362,14 @@ cmd = "cd backend && /app/venv/bin/uvicorn server:app --host 0.0.0.0 --port ${PO
 **2026-01-28**: Les fichiers de configuration Railway peuvent se "surcharger" mutuellement (railway.toml > railway.json > Procfile > nixpacks.toml). S'assurer qu'ils sont tous alignés.
 
 **2026-01-28**: Différents outils IA ont différentes forces. Claude Code excelle en architecture et refactoring. Cursor brille pour le debugging itératif avec feedback en temps réel.
+
+**2026-02-02**: L'ordre de présentation des options dans un formulaire influence l'expérience : montrer d'abord le problème (rouge) puis la solution (vert) crée un parcours plus naturel que l'inverse.
+
+**2026-02-02**: Simplifier n'est pas "dumbing down" - c'est rendre accessible. "Cryptage" au lieu de "chiffrement", "mot de passe" au lieu de "MdP" réduit la charge cognitive sans perdre la précision.
+
+**2026-02-02**: Un ton moins culpabilisant ("Il faut agir rapidement" au lieu de "Urgent: mise en conformité + notification rétroactive") maintient l'urgence tout en étant moins anxiogène.
+
+**2026-02-02**: Les modifications de contenu à grande échelle (15 questions × 3-4 options) bénéficient d'une approche systématique avec suivi (TodoWrite) - sinon on oublie des éléments.
 
 ---
 
