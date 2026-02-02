@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { questions, sections, calculateScore, getTopPriorities } from '@/data/questionsData';
 import { LandingPage } from '@/components/LandingPage';
@@ -11,6 +11,7 @@ import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { generateAnalysis } from '@/lib/openai';
 import { saveSubmission } from '@/lib/supabase';
+import { useDebugContext } from '@/context/DebugContext';
 
 // Steps in the form flow
 const STEPS = {
@@ -23,6 +24,7 @@ const STEPS = {
 };
 
 export const FormFlow = () => {
+  const { toggleDebugMode } = useDebugContext();
   const [currentStep, setCurrentStep] = useState(STEPS.LANDING);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -34,6 +36,20 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
+
+  // Add keyboard shortcut for debug mode
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Cmd+Shift+D (Mac) or Ctrl+Shift+D (Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        toggleDebugMode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [toggleDebugMode]);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
