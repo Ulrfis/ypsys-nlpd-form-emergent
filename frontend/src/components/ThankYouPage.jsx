@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
@@ -202,18 +202,74 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
             </CardContent>
           </Card>
 
+          {/* Booking Calendar Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <Card className="border-2 border-primary/20 shadow-elegant mb-8">
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2 text-2xl">
+                  <Calendar className="w-6 h-6 text-primary" />
+                  Réservez votre consultation gratuite
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Discutez de vos résultats avec un expert nLPD et obtenez des conseils personnalisés
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  <iframe
+                    src="https://tidycal.com/memoways/30min"
+                    title="Réserver une consultation"
+                    className="w-full border-0 rounded-lg"
+                    style={{ height: '600px', minHeight: '600px' }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      document.getElementById('booking-fallback').style.display = 'block';
+                    }}
+                  />
+                  <div
+                    id="booking-fallback"
+                    style={{ display: 'none' }}
+                    className="text-center py-12"
+                  >
+                    <p className="text-muted-foreground mb-4">
+                      Le calendrier ne peut pas être chargé pour le moment.
+                    </p>
+                    <Button
+                      variant="premium"
+                      size="lg"
+                      onClick={() => window.open('https://tidycal.com/memoways/30min', '_blank')}
+                    >
+                      Ouvrir le calendrier dans un nouvel onglet
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-6 pt-6 border-t border-border">
+                  <p className="text-sm text-center text-muted-foreground">
+                    <strong>Nos experts sont disponibles</strong> pour répondre à vos questions
+                    et vous accompagner dans votre mise en conformité nLPD.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           {/* CTA */}
           <div className="text-center">
             <h3 className="text-xl font-semibold text-foreground mb-4">
               Besoin d'aide pour mettre en place les actions?
             </h3>
             <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
-              Nos experts peuvent vous accompagner dans la mise en conformité nLPD 
+              Nos experts peuvent vous accompagner dans la mise en conformité nLPD
               et la sécurisation de vos données.
             </p>
-            <Button 
-              variant="premium" 
-              size="xl" 
+            <Button
+              variant="premium"
+              size="xl"
               onClick={onBookConsultation}
               className="group"
             >
