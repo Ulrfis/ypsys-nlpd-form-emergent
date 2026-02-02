@@ -10,7 +10,7 @@ import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { generateAnalysis } from '@/lib/openai';
-import { saveSubmission } from '@/lib/supabase';
+import { saveSubmission, setDebugContext } from '@/lib/supabase';
 import { useDebugContext } from '@/context/DebugContext';
 
 // Steps in the form flow
@@ -24,7 +24,8 @@ const STEPS = {
 };
 
 export const FormFlow = () => {
-  const { toggleDebugMode } = useDebugContext();
+  const debugContext = useDebugContext();
+  const { toggleDebugMode } = debugContext;
   const [currentStep, setCurrentStep] = useState(STEPS.LANDING);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -36,6 +37,11 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
+
+  // Initialize debug context for supabase module
+  useEffect(() => {
+    setDebugContext(debugContext);
+  }, [debugContext]);
 
   // Add keyboard shortcut for debug mode
   useEffect(() => {
