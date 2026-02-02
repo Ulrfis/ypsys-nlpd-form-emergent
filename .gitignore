@@ -58,6 +58,9 @@ chainlit.md
 .ipynb_checkpoints/
 .ac
 
+# Git worktrees
+.worktrees/
+
 # Deployment
 .vercel
 
