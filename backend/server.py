@@ -322,11 +322,17 @@ async def analyze(request: AnalyzeRequest):
 # Include the router in the main app
 app.include_router(api_router)
 
-# CORS middleware
+# CORS middleware (explicit origins required when allow_credentials=True; * is invalid)
+_cors_origins = os.environ.get("CORS_ORIGINS", "").strip()
+if _cors_origins and _cors_origins != "*":
+    _allowed_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+else:
+    _allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=_allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )

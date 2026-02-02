@@ -73,19 +73,26 @@ uvicorn server:app --reload
 
 ## Variables d'environnement
 
-### Frontend (.env)
-```
-REACT_APP_BACKEND_URL=<url>
-REACT_APP_SUPABASE_URL=https://hdvhvadnwgaibcvvqypk.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=<anon_key>
-REACT_APP_OPENAI_API_KEY=<openai_key>
-REACT_APP_OPENAI_ASSISTANT_ID=asst_felvhtNS41JmXwkrGMPbXo3S
-```
+Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `backend/.env`, puis renseigner les valeurs.
 
-### Backend (.env)
-```
-CORS_ORIGINS=*
-```
+### Frontend (`frontend/.env`)
+
+| Variable | Où la mettre | Où la trouver |
+|----------|-------------|----------------|
+| **REACT_APP_BACKEND_URL** | `frontend/.env` | En local : `http://localhost:8000`. En production : URL du backend déployé (ex. `https://votre-backend.railway.app`). À définir dans les variables d'environnement du build (Railway/Vercel) lors du déploiement du frontend. |
+| **REACT_APP_SUPABASE_URL** | `frontend/.env` uniquement | Supabase Dashboard → votre projet → **Settings** → **API** → **Project URL** |
+| **REACT_APP_SUPABASE_ANON_KEY** | `frontend/.env` uniquement | Supabase Dashboard → **Settings** → **API** → **Project API keys** → **anon public** |
+
+- Ne pas mettre les clés Supabase dans le backend : la connexion Supabase est côté frontend.
+- **Ne jamais** mettre de clé OpenAI dans le frontend (`REACT_APP_*` est inclus dans le bundle = visible par tous). Mettre **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** uniquement dans **backend/.env**.
+
+### Backend (`backend/.env`)
+
+| Variable | Rôle |
+|----------|------|
+| **OPENAI_API_KEY** | Clé API OpenAI (pour la route `/api/analyze`) |
+| **OPENAI_ASSISTANT_ID** | ID de l’assistant OpenAI |
+| **CORS_ORIGINS** | (Optionnel) Origines autorisées, séparées par des virgules. Par défaut : `http://localhost:3000`, `http://127.0.0.1:3000` |
 
 ---
 
