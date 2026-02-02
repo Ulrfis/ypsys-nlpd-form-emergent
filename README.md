@@ -135,6 +135,8 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - Tous les fichiers de config (`nixpacks.toml`, `railway.toml`, `railway.json`, `Procfile`) doivent utiliser `/app/venv/bin/uvicorn`
 - La configuration Nixpacks inclut : `python311`, `python311Packages.pip`, `nodejs_20`
 
+**Variables d'environnement en production** : Les variables `REACT_APP_*` sont injectées **au build**. Il faut définir **REACT_APP_SUPABASE_URL** et **REACT_APP_SUPABASE_ANON_KEY** dans Railway (Variables) **avant** de déployer, sinon Supabase et l’analyse ne fonctionneront pas. Voir **[docs/deployment-railway-env.md](docs/deployment-railway-env.md)** pour le détail.
+
 **Note historique** : Ce déploiement a nécessité 8 tentatives pour résoudre les problèmes spécifiques à Nixpacks + Python + Nix (5 avec Claude Code, 3 avec Cursor). Voir `STORY.md` pour les détails.
 
 ---

@@ -24,13 +24,17 @@ function updateDebugLog(logId, update) {
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not configured. Using fallback mode.');
+const isSupabaseConfigured = supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('placeholder') && supabaseAnonKey !== 'placeholder-key';
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    '[Supabase] Credentials not configured. Set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in your build environment (e.g. Railway Variables) and redeploy.'
+  );
 }
 
 export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseUrl && !supabaseUrl.includes('placeholder') ? supabaseUrl : 'https://placeholder.supabase.co',
+  supabaseAnonKey && supabaseAnonKey !== 'placeholder-key' ? supabaseAnonKey : 'placeholder-key'
 );
 
 /**
@@ -85,6 +89,9 @@ export async function saveSubmission(payload, openaiResponse) {
 
   if (subError) {
     console.error('Error saving submission:', subError);
+    if (!isSupabaseConfigured) {
+      console.error('[Supabase] Configure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in Railway (or your host) Variables, then redeploy.');
+    }
     throw subError;
   }
 

@@ -3,7 +3,14 @@ import { createLog, createLogUpdate } from './debugLogger';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 const OPENAI_ASSISTANT_ID = process.env.REACT_APP_OPENAI_ASSISTANT_ID;
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL?.replace(/\/$/, '');
+
+/** Backend URL: from env at build, or at runtime from current origin (same host in prod). Resolved when used, not at load. */
+function getBackendUrl() {
+  const fromEnv = process.env.REACT_APP_BACKEND_URL;
+  if (fromEnv && fromEnv.trim()) return fromEnv.replace(/\/$/, '');
+  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin.replace(/\/$/, '');
+  return '';
+}
 
 // Global reference to debug context (set by useDebugContext)
 let openaiDebugContextRef = null;
@@ -45,7 +52,8 @@ function withTimeout(promise, timeoutMs, errorMessage) {
  * Generate analysis via backend proxy (avoids CORS and exposes API key only server-side)
  */
 async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
-  const url = `${BACKEND_URL}/api/analyze`;
+  const backendUrl = getBackendUrl();
+  const url = `${backendUrl}/api/analyze`;
   const logId = addDebugLog(createLog('openai', 'analyze.proxy', {
     endpoint: url,
     method: 'POST',
@@ -122,12 +130,15 @@ async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
  * @returns {Object} - { teaser, lead_temperature, email_user, email_sales }
  */
 export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
-  if (BACKEND_URL) {
+  const backendUrl = getBackendUrl();
+  if (backendUrl) {
     return generateAnalysisViaBackend(payload, onStatusUpdate);
   }
 
   if (!openai || !OPENAI_ASSISTANT_ID) {
-    console.warn('OpenAI not configured, using fallback response');
+    console.warn(
+      '[OpenAI] Not configured (no backend proxy URL or direct API key). Set REACT_APP_BACKEND_URL in build env, or add OPENAI_API_KEY + OPENAI_ASSISTANT_ID in backend/.env and redeploy. Using fallback response.'
+    );
     onStatusUpdate('generating', 'Génération des recommandations...');
     await new Promise(resolve => setTimeout(resolve, 2000));
     onStatusUpdate('complete', 'Analyse terminée!');
