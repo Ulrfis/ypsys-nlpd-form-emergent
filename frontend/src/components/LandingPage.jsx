@@ -16,11 +16,12 @@ export const LandingPage = ({ onStart }) => {
           className="max-w-4xl mx-auto text-center"
         >
           {/* Logo/Brand */}
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
-              <Shield className="w-7 h-7 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold text-foreground">Ypsys</span>
+          <div className="flex items-center justify-center mb-8">
+            <img
+              src="/logo-ypsys.png"
+              alt="Ypsys - time for real performance"
+              className="h-16 md:h-20 w-auto"
+            />
           </div>
 
           {/* Main Headline */}
