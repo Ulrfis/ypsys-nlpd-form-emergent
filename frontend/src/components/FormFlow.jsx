@@ -40,8 +40,13 @@ export const FormFlow = () => {
   // Add keyboard shortcut for debug mode
   useEffect(() => {
     const handleKeyPress = (e) => {
+      // Ignore if user is typing in an input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+
       // Cmd+Shift+D (Mac) or Ctrl+Shift+D (Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'D') {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.code === 'KeyD') {
         e.preventDefault();
         toggleDebugMode();
       }
