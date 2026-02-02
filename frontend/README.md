@@ -39,6 +39,70 @@ Instead, it will copy all the configuration files and the transitive dependencie
 
 You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
 
+## Debug Mode
+
+### Overview
+
+The application includes a comprehensive debug mode for development that displays all data exchanges with Supabase and OpenAI in real-time.
+
+### Activation
+
+Add `?debug=true` to the application URL:
+
+```
+http://localhost:3000?debug=true
+```
+
+The debug panel automatically opens and slides in from the right side of the screen.
+
+### Features
+
+- **Real-time logging** of all Supabase and OpenAI API calls
+- **Filtering** by service type (Supabase/OpenAI)
+- **Expandable log entries** showing full request/response data
+- **Highlighted logs** for important events (form submissions, OpenAI responses)
+- **Chronological timeline** with timestamps and duration metrics
+- **Export functionality** to download logs as JSON
+- **LocalStorage persistence** (max 100 logs, 7-day retention)
+- **Dark mode support**
+
+### Log Types
+
+**Supabase:**
+- Form submission inserts (highlighted)
+- Email output inserts
+
+**OpenAI:**
+- Thread creation
+- Message creation
+- Run creation and polling
+- Response retrieval (highlighted)
+- Error handling
+
+### Documentation
+
+For detailed usage instructions, see [docs/debug-mode-usage.md](../docs/debug-mode-usage.md)
+
+### Security
+
+⚠️ **Important:** The debug mode is for development only and should never be enabled in production.
+
+- API keys and tokens are automatically sanitized in logs
+- Authorization headers are redacted
+- Sensitive data is filtered before display
+
+### Architecture
+
+**Core files:**
+- `src/components/DebugPanel.jsx` - Main UI component
+- `src/context/DebugContext.jsx` - Global state management
+- `src/lib/debugLogger.js` - Logging utilities
+
+**Integration points:**
+- `src/lib/supabase.js` - Supabase logging
+- `src/lib/openai.js` - OpenAI logging
+- `src/components/FormFlow.jsx` - Keyboard shortcut and panel rendering
+
 ## Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).

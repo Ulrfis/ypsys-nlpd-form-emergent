@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { questions, sections, calculateScore, getTopPriorities } from '@/data/questionsData';
 import { LandingPage } from '@/components/LandingPage';
@@ -9,8 +9,10 @@ import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { generateAnalysis } from '@/lib/openai';
-import { saveSubmission } from '@/lib/supabase';
+import { DebugPanel } from '@/components/DebugPanel';
+import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
+import { saveSubmission, setDebugContext } from '@/lib/supabase';
+import { useDebugContext } from '@/context/DebugContext';
 
 // Steps in the form flow
 const STEPS = {
@@ -23,6 +25,8 @@ const STEPS = {
 };
 
 export const FormFlow = () => {
+  const debugContext = useDebugContext();
+  const { toggleDebugMode } = debugContext;
   const [currentStep, setCurrentStep] = useState(STEPS.LANDING);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -34,6 +38,23 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
+
+  // Initialize debug context for supabase and openai modules
+  useEffect(() => {
+    setDebugContext(debugContext);
+    setOpenAIDebugContext(debugContext);
+  }, [debugContext]);
+
+  // Activate debug mode if ?debug=true is in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const debugParam = urlParams.get('debug');
+
+    if (debugParam === 'true' && !debugContext.isDebugMode) {
+      toggleDebugMode();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
@@ -280,6 +301,9 @@ export const FormFlow = () => {
           />
         )}
       </AnimatePresence>
+
+      {/* Debug Panel */}
+      <DebugPanel />
     </div>
   );
 };

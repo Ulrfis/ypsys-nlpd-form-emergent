@@ -1,4 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
+import { createLog, createLogUpdate } from './debugLogger';
+
+// Global reference to debug context (set by useDebugContext)
+let debugContextRef = null;
+
+export function setDebugContext(context) {
+  debugContextRef = context;
+}
+
+function addDebugLog(log) {
+  if (debugContextRef?.isDebugMode && debugContextRef?.addLog) {
+    return debugContextRef.addLog(log);
+  }
+  return null;
+}
+
+function updateDebugLog(logId, update) {
+  if (debugContextRef?.isDebugMode && debugContextRef?.updateLog && logId) {
+    debugContextRef.updateLog(logId, update);
+  }
+}
 
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
@@ -16,6 +37,21 @@ export const supabase = createClient(
  * Save form submission to Supabase
  */
 export async function saveSubmission(payload, openaiResponse) {
+  // LOG 1: Insert form_submissions
+  const formLogId = addDebugLog(createLog('supabase', 'insert.form_submissions', {
+    endpoint: 'form_submissions',
+    method: 'INSERT',
+    payload: {
+      answers: payload.answers,
+      score: payload.score,
+      user: payload.user,
+    },
+    isHighlighted: true,
+    highlightReason: 'form_data',
+  }));
+
+  const startTime = Date.now();
+
   // 1. Save form submission
   const { data: submission, error: subError } = await supabase
     .from('form_submissions')
@@ -41,6 +77,12 @@ export async function saveSubmission(payload, openaiResponse) {
     .select()
     .single();
 
+  updateDebugLog(formLogId, createLogUpdate(
+    { data: submission, error: subError },
+    Date.now() - startTime,
+    subError ? 'error' : 'success'
+  ));
+
   if (subError) {
     console.error('Error saving submission:', subError);
     throw subError;
@@ -48,6 +90,17 @@ export async function saveSubmission(payload, openaiResponse) {
 
   // 2. Save email outputs (only if user provided email and we have OpenAI response)
   if (payload.has_email && openaiResponse?.email_user && openaiResponse?.email_sales) {
+    const emailLogId = addDebugLog(createLog('supabase', 'insert.email_outputs', {
+      endpoint: 'email_outputs',
+      method: 'INSERT',
+      payload: {
+        submission_id: submission.id,
+        lead_temperature: openaiResponse.lead_temperature,
+      },
+    }));
+
+    const emailStartTime = Date.now();
+
     const { error: emailError } = await supabase
       .from('email_outputs')
       .insert({
@@ -58,6 +111,12 @@ export async function saveSubmission(payload, openaiResponse) {
         email_sales_subject: openaiResponse.email_sales.subject,
         lead_temperature: openaiResponse.lead_temperature,
       });
+
+    updateDebugLog(emailLogId, createLogUpdate(
+      { error: emailError },
+      Date.now() - emailStartTime,
+      emailError ? 'error' : 'success'
+    ));
 
     if (emailError) {
       console.error('Error saving email outputs:', emailError);
