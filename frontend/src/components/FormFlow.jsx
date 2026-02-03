@@ -258,13 +258,13 @@ export const FormFlow = () => {
         )}
 
         {currentStep === STEPS.QUESTIONS && currentQuestion && (
-          <div key="questions" className="min-h-screen flex flex-col w-full max-w-[100vw] overflow-x-hidden">
+          <div key="questions" className="h-screen flex flex-col w-full max-w-[100vw] overflow-x-hidden">
             <ProgressBar 
               currentQuestion={currentQuestionIndex + 1}
               totalQuestions={questions.length}
               answers={answers}
             />
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-contain">
               <div className="container mx-auto px-4 py-4 sm:py-8">
                 <QuestionCard
                   question={currentQuestion}
@@ -280,8 +280,8 @@ export const FormFlow = () => {
                 />
               </div>
             </div>
-            {/* Barre de navigation toujours visible sur smartphone */}
-            <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm">
+            {/* Barre de navigation fixe en bas (comme une barre de menu) */}
+            <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm sticky bottom-0">
               <div className="container mx-auto px-4 py-3 max-w-3xl">
                 <div className="flex items-center justify-between gap-2">
                   <Button
