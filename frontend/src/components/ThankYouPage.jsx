@@ -4,43 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { 
-  CheckCircle, 
   AlertTriangle, 
-  XCircle, 
   Mail, 
   Calendar,
   ArrowRight,
-  Shield,
-  TrendingUp,
-  FileText
 } from 'lucide-react';
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 
-const scoreConfig = {
-  green: {
-    color: 'success',
-    icon: CheckCircle,
-    title: 'En bonne position',
-    description: 'Votre organisation maîtrise les bases de la conformité nLPD.',
-  },
-  orange: {
-    color: 'warning',
-    icon: AlertTriangle,
-    title: 'Gaps significatifs',
-    description: 'Des actions prioritaires sont nécessaires pour sécuriser votre conformité.',
-  },
-  red: {
-    color: 'danger',
-    icon: XCircle,
-    title: 'Risque critique',
-    description: 'Un audit PFPDT révélerait des failles importantes. Action urgente requise.',
-  },
-};
-
-export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsultation }) => {
-  const config = scoreConfig[score.riskLevel];
-  const ScoreIcon = config.icon;
-
+export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation }) => {
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -50,13 +21,14 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
           transition={{ duration: 0.5 }}
           className="max-w-3xl mx-auto"
         >
-          {/* Header - compact sur mobile */}
+          {/* Header avec logo */}
           <div className="text-center mb-6 sm:mb-10">
-            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
-                <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
-              </div>
-              <span className="text-xl sm:text-2xl font-bold text-foreground">Ypsys</span>
+            <div className="flex items-center justify-center mb-4 sm:mb-6">
+              <img
+                src="/logo-ypsys.png"
+                alt="Ypsys - time for real performance"
+                className="h-12 sm:h-16 md:h-20 w-auto"
+              />
             </div>
             <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
               Votre diagnostic nLPD
@@ -65,77 +37,6 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
               Merci d'avoir complété l'évaluation. Voici vos résultats.
             </p>
           </div>
-
-          {/* Score Card - compact sur mobile */}
-          <Card className={cn(
-            "border-2 shadow-elegant mb-4 sm:mb-8",
-            config.color === 'success' && "border-success/30 bg-success/5",
-            config.color === 'warning' && "border-warning/30 bg-warning/5",
-            config.color === 'danger' && "border-danger/30 bg-danger/5"
-          )}>
-            <CardContent className="p-4 sm:p-8">
-              <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
-                {/* Score Display */}
-                <div className="flex-shrink-0">
-                  <div className={cn(
-                    "w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center relative",
-                    config.color === 'success' && "bg-success/10",
-                    config.color === 'warning' && "bg-warning/10",
-                    config.color === 'danger' && "bg-danger/10"
-                  )}>
-                    <div className={cn(
-                      "absolute inset-2 rounded-full border-4",
-                      config.color === 'success' && "border-success",
-                      config.color === 'warning' && "border-warning",
-                      config.color === 'danger' && "border-danger"
-                    )} />
-                    <div className="text-center">
-                      <span className={cn(
-                        "text-2xl sm:text-4xl font-bold",
-                        config.color === 'success' && "text-success",
-                        config.color === 'warning' && "text-warning",
-                        config.color === 'danger' && "text-danger"
-                      )}>
-                        {score.normalized}
-                      </span>
-                      <span className="text-sm sm:text-lg text-muted-foreground">/10</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Score Info */}
-                <div className="flex-1 text-center md:text-left">
-                  <div className={cn(
-                    "inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium mb-3",
-                    config.color === 'success' && "bg-success/10 text-success",
-                    config.color === 'warning' && "bg-warning/10 text-warning",
-                    config.color === 'danger' && "bg-danger/10 text-danger"
-                  )}>
-                    <ScoreIcon className="w-4 h-4" />
-                    {config.title}
-                  </div>
-                  <p className="text-foreground/80">
-                    {config.description}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Teaser / AI Summary - compact */}
-          {teaser && (
-            <Card className="border-2 border-border shadow-md mb-4 sm:mb-8">
-              <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                  Analyse personnalisée
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">{teaser}</p>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Top 3 Priorities - compact */}
           {priorities && priorities.length > 0 && (
