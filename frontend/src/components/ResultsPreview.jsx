@@ -119,25 +119,6 @@ export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' 
             </CardContent>
           </Card>
 
-          {/* Teaser Card - compact */}
-          <Card className="border-2 border-primary/20 bg-primary/5 mb-4 sm:mb-6">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-start gap-3 sm:gap-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold text-primary mb-1 sm:mb-2">
-                    Aperçu de vos priorités
-                  </h3>
-                  <p className="text-xs sm:text-sm text-foreground/80 leading-relaxed">
-                    {teaser || "Votre diagnostic révèle plusieurs points d'attention. La bonne nouvelle : des solutions existent pour sécuriser votre conformité nLPD."}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Email Report Card - compact */}
           <Card className="border-2 border-border bg-card mb-4 sm:mb-8">
             <CardContent className="p-3 sm:p-5">
