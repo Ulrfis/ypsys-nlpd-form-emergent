@@ -57,19 +57,19 @@ export const ProgressBar = ({ currentQuestion, totalQuestions, answers }) => {
 
   return (
     <div className="w-full bg-card/80 backdrop-blur-sm border-b border-border sticky top-0 z-40">
-      <div className="container mx-auto px-4 py-4">
-        {/* Main progress bar */}
-        <div className="flex items-center gap-4 mb-4">
-          <div className="flex-1">
-            <Progress value={progress} className="h-2" />
+      <div className="container mx-auto px-3 sm:px-4 py-2 sm:py-4">
+        {/* Main progress bar - plus compacte sur mobile */}
+        <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
+          <div className="flex-1 min-w-0">
+            <Progress value={progress} className="h-1.5 sm:h-2" />
           </div>
-          <span className="text-sm font-medium text-muted-foreground whitespace-nowrap">
-            Question {currentQuestion}/{totalQuestions}
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground whitespace-nowrap shrink-0">
+            {currentQuestion}/{totalQuestions}
           </span>
         </div>
 
-        {/* Section indicators */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {/* Section indicators - plus compacts */}
+        <div className="flex items-center justify-between gap-1 sm:gap-2 overflow-x-auto pb-1 sm:pb-2 scrollbar-hide">
           {sections.map((section, index) => {
             const sectionProgress = getSectionProgress(section.id);
             const IconComponent = iconMap[section.icon] || Shield;
@@ -81,22 +81,22 @@ export const ProgressBar = ({ currentQuestion, totalQuestions, answers }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-lg transition-colors min-w-fit",
+                  "flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors min-w-fit",
                   sectionProgress.isCurrent && "bg-primary/10 border border-primary/20",
                   sectionProgress.isComplete && "bg-success/10 border border-success/20",
                   !sectionProgress.isCurrent && !sectionProgress.isComplete && "bg-muted/50"
                 )}
               >
                 <div className={cn(
-                  "w-8 h-8 rounded-lg flex items-center justify-center",
+                  "w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0",
                   sectionProgress.isComplete && "bg-success text-success-foreground",
                   sectionProgress.isCurrent && !sectionProgress.isComplete && "bg-primary text-primary-foreground",
                   !sectionProgress.isCurrent && !sectionProgress.isComplete && "bg-muted text-muted-foreground"
                 )}>
                   {sectionProgress.isComplete ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <IconComponent className="w-4 h-4" />
+                    <IconComponent className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </div>
                 <div className="hidden sm:block">

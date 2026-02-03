@@ -42,43 +42,43 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
   const ScoreIcon = config.icon;
 
   return (
-    <div className="min-h-screen bg-gradient-hero py-12">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
+      <div className="container mx-auto px-4 max-w-[100vw]">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="max-w-3xl mx-auto"
         >
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
-                <Shield className="w-7 h-7 text-primary-foreground" />
+          {/* Header - compact sur mobile */}
+          <div className="text-center mb-6 sm:mb-10">
+            <div className="flex items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-primary flex items-center justify-center shadow-elegant">
+                <Shield className="w-5 h-5 sm:w-7 sm:h-7 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold text-foreground">Ypsys</span>
+              <span className="text-xl sm:text-2xl font-bold text-foreground">Ypsys</span>
             </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h1 className="font-display text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-3 sm:mb-4">
               Votre diagnostic nLPD
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Merci d'avoir complété l'évaluation. Voici vos résultats.
             </p>
           </div>
 
-          {/* Score Card */}
+          {/* Score Card - compact sur mobile */}
           <Card className={cn(
-            "border-2 shadow-elegant mb-8",
+            "border-2 shadow-elegant mb-4 sm:mb-8",
             config.color === 'success' && "border-success/30 bg-success/5",
             config.color === 'warning' && "border-warning/30 bg-warning/5",
             config.color === 'danger' && "border-danger/30 bg-danger/5"
           )}>
-            <CardContent className="p-8">
-              <div className="flex flex-col md:flex-row items-center gap-6">
+            <CardContent className="p-4 sm:p-8">
+              <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
                 {/* Score Display */}
                 <div className="flex-shrink-0">
                   <div className={cn(
-                    "w-32 h-32 rounded-full flex items-center justify-center relative",
+                    "w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center relative",
                     config.color === 'success' && "bg-success/10",
                     config.color === 'warning' && "bg-warning/10",
                     config.color === 'danger' && "bg-danger/10"
@@ -91,14 +91,14 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
                     )} />
                     <div className="text-center">
                       <span className={cn(
-                        "text-4xl font-bold",
+                        "text-2xl sm:text-4xl font-bold",
                         config.color === 'success' && "text-success",
                         config.color === 'warning' && "text-warning",
                         config.color === 'danger' && "text-danger"
                       )}>
                         {score.normalized}
                       </span>
-                      <span className="text-lg text-muted-foreground">/10</span>
+                      <span className="text-sm sm:text-lg text-muted-foreground">/10</span>
                     </div>
                   </div>
                 </div>
@@ -122,32 +122,32 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
             </CardContent>
           </Card>
 
-          {/* Teaser / AI Summary */}
+          {/* Teaser / AI Summary - compact */}
           {teaser && (
-            <Card className="border-2 border-border shadow-md mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <TrendingUp className="w-5 h-5 text-primary" />
+            <Card className="border-2 border-border shadow-md mb-4 sm:mb-8">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   Analyse personnalisée
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-foreground/90 leading-relaxed">{teaser}</p>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">{teaser}</p>
               </CardContent>
             </Card>
           )}
 
-          {/* Top 3 Priorities */}
+          {/* Top 3 Priorities - compact */}
           {priorities && priorities.length > 0 && (
-            <Card className="border-2 border-border shadow-md mb-8">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <AlertTriangle className="w-5 h-5 text-warning" />
+            <Card className="border-2 border-border shadow-md mb-4 sm:mb-8">
+              <CardHeader className="p-4 sm:p-6">
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
                   Vos 3 priorités
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+                <div className="space-y-3 sm:space-y-4">
                   {priorities.map((priority, index) => (
                     <motion.div
                       key={index}
@@ -182,9 +182,9 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
             </Card>
           )}
 
-          {/* Email Confirmation */}
-          <Card className="border-2 border-primary/20 bg-primary/5 mb-8">
-            <CardContent className="p-6">
+          {/* Email Confirmation - compact */}
+          <Card className="border-2 border-primary/20 bg-primary/5 mb-4 sm:mb-8">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <Mail className="w-6 h-6 text-primary" />
@@ -203,19 +203,19 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
             </CardContent>
           </Card>
 
-          {/* Booking Calendar Section */}
+          {/* Booking Calendar Section - compact */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            <Card className="border-2 border-primary/20 shadow-elegant mb-8">
-              <CardHeader className="text-center">
-                <CardTitle className="flex items-center justify-center gap-2 text-2xl">
-                  <Calendar className="w-6 h-6 text-primary" />
+            <Card className="border-2 border-primary/20 shadow-elegant mb-4 sm:mb-8">
+              <CardHeader className="text-center p-4 sm:p-6">
+                <CardTitle className="flex items-center justify-center gap-2 text-lg sm:text-2xl">
+                  <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   Réservez votre consultation gratuite
                 </CardTitle>
-                <CardDescription className="text-base">
+                <CardDescription className="text-sm sm:text-base">
                   Discutez de vos résultats avec un expert nLPD et obtenez des conseils personnalisés
                 </CardDescription>
               </CardHeader>
@@ -259,26 +259,26 @@ export const ThankYouPage = ({ score, priorities, teaser, userEmail, onBookConsu
             </Card>
           </motion.div>
 
-          {/* CTA */}
-          <div className="text-center">
-            <h3 className="text-xl font-semibold text-foreground mb-4">
+          {/* CTA - bouton tient sur une ligne mobile */}
+          <div className="text-center px-0">
+            <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4">
               Besoin d'aide pour mettre en place les actions?
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-lg mx-auto">
+            <p className="text-sm sm:text-base text-muted-foreground mb-4 sm:mb-6 max-w-lg mx-auto">
               Nos experts peuvent vous accompagner dans la mise en conformité nLPD
               et la sécurisation de vos données.
             </p>
             <Button
               variant="premium"
-              size="xl"
+              size="lg"
               onClick={onBookConsultation}
-              className="group"
+              className="group w-full max-w-full text-xs sm:text-base px-3 sm:px-6 min-w-0"
             >
-              <Calendar className="w-5 h-5" />
-              Réserver une consultation gratuite
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+              <span className="truncate">Réserver une consultation gratuite</span>
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
             </Button>
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4">
               30 minutes • Sans engagement • Experts certifiés
             </p>
           </div>

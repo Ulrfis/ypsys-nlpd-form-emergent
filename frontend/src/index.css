@@ -18,8 +18,10 @@ a[href*="emergent.sh"][style*="fixed"] {
     overflow: hidden !important;
 }
 
-body {
+html, body {
     margin: 0;
+    max-width: 100vw;
+    overflow-x: hidden;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
         "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
         sans-serif;

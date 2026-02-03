@@ -4,12 +4,14 @@ import { questions, sections, calculateScore, getTopPriorities } from '@/data/qu
 import { LandingPage } from '@/components/LandingPage';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QuestionCard } from '@/components/QuestionCard';
+import { Button } from '@/components/ui/button';
 import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
 import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
+import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
 import { saveSubmission, setDebugContext } from '@/lib/supabase';
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
@@ -256,24 +258,67 @@ export const FormFlow = () => {
         )}
 
         {currentStep === STEPS.QUESTIONS && currentQuestion && (
-          <div key="questions" className="min-h-screen">
+          <div key="questions" className="min-h-screen flex flex-col w-full max-w-[100vw] overflow-x-hidden">
             <ProgressBar 
               currentQuestion={currentQuestionIndex + 1}
               totalQuestions={questions.length}
               answers={answers}
             />
-            <div className="container mx-auto px-4 py-8">
-              <QuestionCard
-                question={currentQuestion}
-                section={currentSection}
-                selectedAnswer={answers[currentQuestion.id]}
-                onAnswer={(value) => handleAnswer(currentQuestion.id, value)}
-                onNext={handleNext}
-                onPrevious={handlePrevious}
-                onSubmit={handleSubmitAnswers}
-                isFirst={currentQuestionIndex === 0}
-                isLast={currentQuestionIndex === questions.length - 1}
-              />
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+              <div className="container mx-auto px-4 py-4 sm:py-8">
+                <QuestionCard
+                  question={currentQuestion}
+                  section={currentSection}
+                  selectedAnswer={answers[currentQuestion.id]}
+                  onAnswer={(value) => handleAnswer(currentQuestion.id, value)}
+                  onNext={handleNext}
+                  onPrevious={handlePrevious}
+                  onSubmit={handleSubmitAnswers}
+                  isFirst={currentQuestionIndex === 0}
+                  isLast={currentQuestionIndex === questions.length - 1}
+                  hideNav
+                />
+              </div>
+            </div>
+            {/* Barre de navigation toujours visible sur smartphone */}
+            <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm">
+              <div className="container mx-auto px-4 py-3 max-w-3xl">
+                <div className="flex items-center justify-between gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePrevious}
+                    disabled={currentQuestionIndex === 0}
+                    className="gap-1.5 text-xs sm:text-sm shrink-0"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    Précédent
+                  </Button>
+                  {currentQuestionIndex === questions.length - 1 ? (
+                    <Button
+                      variant="premium"
+                      size="sm"
+                      onClick={handleSubmitAnswers}
+                      disabled={!answers[currentQuestion.id]}
+                      className="gap-1.5 text-xs sm:text-sm min-w-0 px-2 sm:px-4"
+                    >
+                      <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                      <span className="truncate">Envoyer les réponses</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={answers[currentQuestion.id] ? "premium" : "outline"}
+                      size="sm"
+                      onClick={handleNext}
+                      disabled={!answers[currentQuestion.id]}
+                      className="gap-1.5 text-xs sm:text-sm min-w-0 px-2 sm:px-4"
+                    >
+                      <span className="truncate">Suivant</span>
+                      <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -296,8 +341,8 @@ export const FormFlow = () => {
         )}
 
         {currentStep === STEPS.LEAD_CAPTURE && (
-          <div key="lead-capture" className="min-h-screen bg-gradient-hero py-12">
-            <div className="container mx-auto px-4">
+          <div key="lead-capture" className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
+            <div className="container mx-auto px-4 max-w-[100vw]">
               <LeadCaptureForm 
                 onSubmit={handleSubmitLead}
                 isLoading={isSubmitting}

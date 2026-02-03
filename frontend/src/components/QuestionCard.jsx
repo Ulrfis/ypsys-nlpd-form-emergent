@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,7 +67,8 @@ export const QuestionCard = ({
   onPrevious,
   onSubmit,
   isFirst,
-  isLast 
+  isLast,
+  hideNav = false,
 }) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const IconComponent = iconMap[question.icon] || HelpCircle;
@@ -76,6 +77,21 @@ export const QuestionCard = ({
     ? question.options.find(opt => opt.value === selectedAnswer)
     : null;
 
+  // Valider avec Entrée une fois une réponse sélectionnée (pas dans un champ de saisie)
+  const handleKeyDown = useCallback((e) => {
+    if (e.key !== 'Enter' || !selectedAnswer) return;
+    const target = e.target;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+    e.preventDefault();
+    if (isLast) onSubmit();
+    else onNext();
+  }, [selectedAnswer, isLast, onSubmit, onNext]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <motion.div
       key={question.id}
@@ -83,25 +99,18 @@ export const QuestionCard = ({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
-      className="max-w-3xl mx-auto"
+      className="max-w-3xl mx-auto w-full min-w-0"
     >
-      {/* Section Header */}
-      <div className="mb-6">
-        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
-          {section?.title}
-        </span>
-      </div>
-
-      {/* Question Card */}
+      {/* Question Card - plus de capsule chapitre (déjà dans la barre de progression) */}
       <Card className="border-2 border-border shadow-elegant overflow-hidden">
-        <CardContent className="p-6 md:p-8">
-          {/* Question Header */}
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <IconComponent className="w-7 h-7 text-primary" />
+        <CardContent className="p-4 sm:p-6 md:p-8">
+          {/* Question Header - compact sur mobile */}
+          <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <IconComponent className="w-5 h-5 sm:w-7 sm:h-7 text-primary" />
             </div>
-            <div className="flex-1">
-              <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-2 leading-tight">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-base sm:text-xl md:text-2xl font-semibold text-foreground mb-1 sm:mb-2 leading-tight">
                 {question.question}
               </h2>
               
@@ -110,10 +119,10 @@ export const QuestionCard = ({
                 <Tooltip open={showTooltip} onOpenChange={setShowTooltip}>
                   <TooltipTrigger asChild>
                     <button 
-                      className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                      className="inline-flex items-center gap-1 text-xs sm:text-sm text-primary hover:text-primary/80 transition-colors"
                       onClick={() => setShowTooltip(!showTooltip)}
                     >
-                      <HelpCircle className="w-4 h-4" />
+                      <HelpCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       Pourquoi c&apos;est important?
                     </button>
                   </TooltipTrigger>
@@ -138,20 +147,20 @@ export const QuestionCard = ({
             </div>
           </div>
 
-          {/* Warning Example */}
+          {/* Warning Example - compact sur mobile */}
           {question.warningExample && (
-            <div className="mb-6 p-4 rounded-lg bg-warning/10 border border-warning/30">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-foreground/80">
+            <div className="mb-4 sm:mb-6 p-3 sm:p-4 rounded-lg bg-warning/10 border border-warning/30">
+              <div className="flex items-start gap-2 sm:gap-3">
+                <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-warning flex-shrink-0 mt-0.5" />
+                <p className="text-xs sm:text-sm text-foreground/80">
                   {question.warningExample}
                 </p>
               </div>
             </div>
           )}
 
-          {/* Answer Options */}
-          <div className="space-y-3">
+          {/* Answer Options - compact sur mobile */}
+          <div className="space-y-2 sm:space-y-3">
             {question.options.map((option, index) => {
               const isSelected = selectedAnswer === option.value;
               const FeedbackIcon = feedbackIcons[option.feedback.type];
@@ -164,7 +173,7 @@ export const QuestionCard = ({
                   transition={{ delay: index * 0.1 }}
                   onClick={() => onAnswer(option.value)}
                   className={cn(
-                    "w-full p-4 rounded-xl border-2 text-left transition-all duration-200",
+                    "w-full p-3 sm:p-4 rounded-xl border-2 text-left transition-all duration-200",
                     "hover:border-primary/50 hover:bg-primary/5",
                     isSelected && option.feedback.type === 'success' && "border-success bg-success/5",
                     isSelected && option.feedback.type === 'warning' && "border-warning bg-warning/5",
@@ -188,9 +197,9 @@ export const QuestionCard = ({
                         />
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p className={cn(
-                        "font-medium",
+                        "text-sm sm:text-base font-medium",
                         isSelected ? "text-foreground" : "text-foreground/80"
                       )}>
                         {option.label}
@@ -203,10 +212,10 @@ export const QuestionCard = ({
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
                             exit={{ opacity: 0, height: 0 }}
-                            className="mt-3 pt-3 border-t border-border/50"
+                            className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-border/50"
                           >
                             <div className={cn(
-                              "flex items-center gap-2 text-sm font-medium mb-2",
+                              "flex items-center gap-2 text-xs sm:text-sm font-medium mb-1 sm:mb-2",
                               option.feedback.type === 'success' && "text-success",
                               option.feedback.type === 'warning' && "text-warning",
                               option.feedback.type === 'danger' && "text-danger"
@@ -214,7 +223,7 @@ export const QuestionCard = ({
                               <FeedbackIcon className="w-4 h-4" />
                               {option.feedback.message}
                             </div>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground">
                               {option.explanation}
                             </p>
                           </motion.div>
@@ -229,40 +238,45 @@ export const QuestionCard = ({
         </CardContent>
       </Card>
 
-      {/* Navigation Buttons */}
-      <div className="flex items-center justify-between mt-6">
-        <Button
-          variant="ghost"
-          onClick={onPrevious}
-          disabled={isFirst}
-          className="gap-2"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Précédent
-        </Button>
-        
-        {isLast ? (
+      {/* Navigation Buttons - masqués si rendus en barre sticky (FormFlow) */}
+      {!hideNav && (
+        <div className="flex items-center justify-between gap-2 mt-4 sm:mt-6">
           <Button
-            variant="premium"
-            onClick={onSubmit}
-            disabled={!selectedAnswer}
-            className="gap-2"
+            variant="ghost"
+            size="sm"
+            onClick={onPrevious}
+            disabled={isFirst}
+            className="gap-1.5 text-xs sm:text-sm shrink-0"
           >
-            <Send className="w-4 h-4" />
-            Envoyer les réponses
+            <ArrowLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Précédent
           </Button>
-        ) : (
-          <Button
-            variant={selectedAnswer ? "premium" : "outline"}
-            onClick={onNext}
-            disabled={!selectedAnswer}
-            className="gap-2"
-          >
-            Suivant
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
+          
+          {isLast ? (
+            <Button
+              variant="premium"
+              size="sm"
+              onClick={onSubmit}
+              disabled={!selectedAnswer}
+              className="gap-1.5 text-xs sm:text-sm min-w-0 px-2 sm:px-4"
+            >
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+              <span className="truncate">Envoyer les réponses</span>
+            </Button>
+          ) : (
+            <Button
+              variant={selectedAnswer ? "premium" : "outline"}
+              size="sm"
+              onClick={onNext}
+              disabled={!selectedAnswer}
+              className="gap-1.5 text-xs sm:text-sm min-w-0 px-2 sm:px-4"
+            >
+              <span className="truncate">Suivant</span>
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            </Button>
+          )}
+        </div>
+      )}
     </motion.div>
   );
 };

@@ -9,7 +9,7 @@ function App() {
   return (
     <DebugProvider>
       <ThemeProvider defaultTheme="light" storageKey="nlpd-ypsys-theme">
-        <div className="App">
+        <div className="App min-h-screen w-full max-w-[100vw] overflow-x-hidden">
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<FormFlow />} />
