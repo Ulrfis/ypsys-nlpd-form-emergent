@@ -269,7 +269,12 @@ async def analyze(request: AnalyzeRequest):
     try:
         thread = client.beta.threads.create()
         client.beta.threads.messages.create(thread.id, role="user", content=payload_str)
-        run = client.beta.threads.runs.create(thread.id, assistant_id=OPENAI_ASSISTANT_ID)
+        # Garantir assez de tokens pour teaser + 2 emails longs (email_user 400-600 mots, email_sales 500-800 mots)
+        run = client.beta.threads.runs.create(
+            thread.id,
+            assistant_id=OPENAI_ASSISTANT_ID,
+            max_completion_tokens=8192,
+        )
 
         max_wait = 45
         start = __import__("time").time()

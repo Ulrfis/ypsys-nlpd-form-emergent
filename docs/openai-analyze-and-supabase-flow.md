@@ -123,6 +123,14 @@ Les deux réponses détaillées (prospect + commercial) transitent donc : **Open
 
 ---
 
+## Configuration de l'assistant OpenAI
+
+- **Format de réponse** : utiliser **json_object** (pas "text"). Cela force l'assistant à renvoyer un JSON valide et correspond à ce que l'app parse.
+- **Modèle** : **gpt-4o** est adapté (instructions complexes, longs textes en markdown).
+- **Budget tokens** : le backend fixe **max_completion_tokens=8192** lors de la création du run, pour garantir assez de place pour le teaser + les deux emails (email_user 400–600 mots, email_sales 500–800 mots). Le réglage "max output tokens" n'est pas toujours visible dans l'interface OpenAI ; le passer côté API (run create) assure le budget même si l'UI ne l'expose pas. Une simulation typique consomme ~13k tokens au total (entrée + sortie) ; gpt-4o a une fenêtre de 128k, donc largement suffisant.
+
+---
+
 ## Panneau debug
 
 Dans le panneau debug (mode `?debug=true`), la requête **analyze.proxy** affiche désormais le **payload complet** envoyé à `/api/analyze`, y compris `answers` et `answers_detailed`, pour vérifier que toutes les réponses sont bien envoyées à OpenAI.
