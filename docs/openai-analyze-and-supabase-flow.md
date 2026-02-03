@@ -137,3 +137,28 @@ Les deux réponses détaillées (prospect + commercial) transitent donc : **Open
 ## Panneau debug
 
 Dans le panneau debug (mode `?debug=true`), la requête **analyze.proxy** affiche désormais le **payload complet** envoyé à `/api/analyze`, y compris `answers` et `answers_detailed`, pour vérifier que toutes les réponses sont bien envoyées à OpenAI.
+
+---
+
+## Dépannage : « email_user=null, email_sales=null » en prod
+
+Si le message apparaît en console alors que l'assistant renvoie bien les emails en sandbox :
+
+1. **Vérifier les variables OpenAI dans Railway**  
+   Le backend a besoin de **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** dans Railway (Variables du service).  
+   **Sans OPENAI_API_KEY**, le backend n'appelle jamais l'API OpenAI et renvoie toujours le fallback (teaser seul, `email_user=null`, `email_sales=null`). Vérifier que les deux variables sont bien définies, puis redéployer si besoin (les variables runtime sont lues au démarrage).
+
+2. **Vérifier OPENAI_ASSISTANT_ID**  
+   Dans Railway → Variables, la valeur de `OPENAI_ASSISTANT_ID` doit être **exactement** l’ID de l’assistant configuré dans OpenAI (Instructions + format **json_object**).  
+   Dans OpenAI : Assistants → ton assistant → l’ID est dans l’URL ou dans les paramètres (ex. `asst_xxxxx`). S’il existe plusieurs assistants (sandbox vs prod), mettre l’ID de celui qui a le bon prompt.
+
+3. **Consulter les logs Railway après un test**  
+   Faire une soumission complète depuis l’app (questionnaire + formulaire de capture avec email).  
+   Puis Railway → Deployments → View logs. Chercher la ligne du type :  
+   `OpenAI response missing email_user and/or email_sales. Keys in response: [...]. Snippet=...`  
+   - **Keys in response** : si tu vois `teaser`, `lead_temperature` mais pas `email_user` / `email_sales`, l’assistant ne les renvoie pas (ou les met sous une autre clé).  
+   - **Snippet** : début brut de la réponse. Si le JSON est coupé (fin abrupte), la réponse est peut‑être tronquée (limite de tokens ou timeout).  
+   Cela permet de voir **exactement** ce que l’API a renvoyé.
+
+4. **Recopier les instructions**  
+   Remplacer entièrement les Instructions de l’assistant par le contenu de [docs/assistant-prompt-nlpd.md](assistant-prompt-nlpd.md) (à partir de « Tu es un assistant expert… »). Enregistrer, refaire un test depuis l’app, puis revérifier les logs Railway.

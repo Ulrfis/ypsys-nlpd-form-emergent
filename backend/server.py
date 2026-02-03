@@ -305,7 +305,10 @@ async def analyze(request: AnalyzeRequest):
         try:
             response = __import__("json").loads(json_str)
         except Exception as e:
-            logger.warning("OpenAI response not valid JSON, using raw teaser: %s", e)
+            logger.warning(
+                "OpenAI response not valid JSON, using raw teaser: %s. Raw length=%d, snippet=%s",
+                e, len(text), text[:400] if text else "",
+            )
             return {
                 "teaser": text[:800],
                 "lead_temperature": _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
@@ -313,18 +316,41 @@ async def analyze(request: AnalyzeRequest):
                 "email_sales": None,
             }
 
-        # Certaines réponses API peuvent avoir les emails sous "full"
+        def _normalize_email_obj(obj):
+            """Accept object with subject + body_markdown or bodyMarkdown. Return None if no body content."""
+            if not obj or not isinstance(obj, dict):
+                return None
+            body = obj.get("body_markdown") or obj.get("bodyMarkdown")
+            if not body or not str(body).strip():
+                return None
+            subj = obj.get("subject")
+            return {"subject": subj or "", "body_markdown": body}
+
+        # Extraire email_user / email_sales : top-level, sous "full", ou camelCase
+        data = response.get("data") if isinstance(response.get("data"), dict) else {}
         full = response.get("full") if isinstance(response.get("full"), dict) else {}
-        email_user = response.get("email_user") or full.get("email_user")
-        email_sales = response.get("email_sales") or full.get("email_sales")
+        email_user = (
+            _normalize_email_obj(response.get("email_user"))
+            or _normalize_email_obj(full.get("email_user"))
+            or _normalize_email_obj(data.get("email_user"))
+            or _normalize_email_obj(response.get("emailUser"))
+        )
+        email_sales = (
+            _normalize_email_obj(response.get("email_sales"))
+            or _normalize_email_obj(full.get("email_sales"))
+            or _normalize_email_obj(data.get("email_sales"))
+            or _normalize_email_obj(response.get("emailSales"))
+        )
+
         if not email_user or not email_sales:
             logger.warning(
                 "OpenAI response missing email_user and/or email_sales. Keys in response: %s. "
-                "email_user type=%s, email_sales type=%s. Raw text length=%d",
+                "email_user type=%s, email_sales type=%s. Raw text length=%d. Snippet=%s",
                 list(response.keys()),
                 type(email_user).__name__ if email_user is not None else "None",
                 type(email_sales).__name__ if email_sales is not None else "None",
                 len(text),
+                text[:500] if text else "",
             )
 
         return {

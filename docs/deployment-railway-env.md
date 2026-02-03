@@ -29,11 +29,11 @@ Sans elles, la sauvegarde des soumissions du formulaire échoue (« Failed to fe
 
 ## Variables pour le backend (runtime)
 
-À définir dans les **Variables** Railway pour que le backend les lise au démarrage.
+À définir dans les **Variables** Railway pour que le backend les lise au démarrage. **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** sont tous deux obligatoires pour que l'assistant génère les emails ; sinon le backend renvoie un fallback (teaser seul, email_outputs vide).
 
 | Variable | Rôle |
 |----------|------|
-| **OPENAI_API_KEY** | Clé API OpenAI (route `/api/analyze`). |
+| **OPENAI_API_KEY** | Clé API OpenAI (route `/api/analyze`). **Obligatoire** — sans elle le backend ne appelle jamais l'API et renvoie toujours email_user=null, email_sales=null. À créer dans [OpenAI API keys](https://platform.openai.com/api-keys). |
 | **OPENAI_ASSISTANT_ID** | ID de l’assistant OpenAI. |
 | **CORS_ORIGINS** | (Optionnel) Origines autorisées, séparées par des virgules. Par défaut le backend accepte les requêtes du même domaine. |
 
