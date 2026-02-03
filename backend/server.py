@@ -92,11 +92,13 @@ class StatusCheckCreate(BaseModel):
 
 
 class AnalyzePayload(BaseModel):
-    """Payload for OpenAI analysis (matches frontend buildAnswerTexts + score)"""
+    """Payload for OpenAI analysis. Must include all answers (q1..q15) so the assistant can analyze in detail."""
     user: Dict[str, Any]
-    answers: Dict[str, str]
+    answers: Dict[str, str]  # e.g. {"q1": "Je ne contrôle pas vraiment", "q2": "Partiellement", ...}
     score: Dict[str, Any]
     has_email: bool = False
+    # Optional: question + answer per item so the assistant has full context without relying only on vector store
+    answers_detailed: Optional[List[Dict[str, str]]] = None  # [{"question_id": "q1", "question": "...", "answer": "..."}, ...]
 
 
 class AnalyzeRequest(BaseModel):

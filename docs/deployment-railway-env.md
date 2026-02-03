@@ -37,7 +37,15 @@ Sans elles, la sauvegarde des soumissions du formulaire échoue (« Failed to fe
 | **OPENAI_ASSISTANT_ID** | ID de l’assistant OpenAI. |
 | **CORS_ORIGINS** | (Optionnel) Origines autorisées, séparées par des virgules. Par défaut le backend accepte les requêtes du même domaine. |
 
+## Dépannage : « Credentials not configured » en prod
+
+Si vous avez bien ajouté **REACT_APP_SUPABASE_URL** et **REACT_APP_SUPABASE_ANON_KEY** dans Railway (onglet Variables) mais que l’app affiche encore « Supabase credentials not configured » ou « Failed to fetch » à la soumission du formulaire :
+
+1. **Appliquer les changements** (« Apply X changes ») pour enregistrer les variables.
+2. **Lancer un nouveau déploiement** (bouton **Deploy**). Les variables `REACT_APP_*` sont injectées **au moment du build** ; le build actuel a été fait sans elles. Un simple redémarrage du service ne suffit pas.
+3. Attendre la fin du build et du déploiement, puis retester.
+
 ## Résumé
 
-- **Supabase** : obligatoire en production. Ajouter **REACT_APP_SUPABASE_URL** et **REACT_APP_SUPABASE_ANON_KEY** dans Railway Variables, puis **redéployer**.
+- **Supabase** : obligatoire en production. Ajouter **REACT_APP_SUPABASE_URL** et **REACT_APP_SUPABASE_ANON_KEY** dans Railway Variables, puis **redéployer** (Deploy).
 - **OpenAI** : le backend doit avoir **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** ; le frontend appelle `/api/analyze` sur la même origine en prod, pas besoin de **REACT_APP_BACKEND_URL** si tout est sur le même service Railway.

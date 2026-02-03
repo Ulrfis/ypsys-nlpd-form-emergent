@@ -86,7 +86,7 @@ export const FormFlow = () => {
     }
   }, [currentQuestionIndex]);
 
-  // Build the answer texts for OpenAI
+  // Build the answer texts for OpenAI (flat dict q1 -> label)
   const buildAnswerTexts = useCallback(() => {
     const answerTexts = {};
     questions.forEach(question => {
@@ -97,6 +97,22 @@ export const FormFlow = () => {
       }
     });
     return answerTexts;
+  }, [answers]);
+
+  // Build detailed answers (question + answer) so the assistant has full context for analysis
+  const buildAnswersDetailed = useCallback(() => {
+    return questions
+      .filter(q => answers[q.id])
+      .map(question => {
+        const selectedValue = answers[question.id];
+        const selectedOption = question.options.find(opt => opt.value === selectedValue);
+        const answerLabel = selectedOption ? selectedOption.label : selectedValue;
+        return {
+          question_id: question.id,
+          question: question.question,
+          answer: answerLabel,
+        };
+      });
   }, [answers]);
 
   // Submit answers and run OpenAI analysis
@@ -112,7 +128,7 @@ export const FormFlow = () => {
     setScore(calculatedScore);
     setPriorities(topPriorities);
 
-    // Build payload for OpenAI (without user data yet)
+    // Build payload for OpenAI: all answers + detailed (question + answer) so the assistant can analyze in detail
     const payload = {
       user: {
         first_name: 'Utilisateur',
@@ -124,6 +140,7 @@ export const FormFlow = () => {
         canton: null,
       },
       answers: buildAnswerTexts(),
+      answers_detailed: buildAnswersDetailed(),
       score: {
         value: calculatedScore.raw,
         normalized: calculatedScore.normalized,
@@ -170,7 +187,7 @@ export const FormFlow = () => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       setCurrentStep(STEPS.RESULTS_PREVIEW);
     }
-  }, [answers, buildAnswerTexts]);
+  }, [answers, buildAnswerTexts, buildAnswersDetailed]);
 
   // Request full report (go to lead capture)
   const handleRequestReport = useCallback(() => {
@@ -182,7 +199,7 @@ export const FormFlow = () => {
     setIsSubmitting(true);
     setUserData(formData);
 
-    // Build complete payload with user data
+    // Build complete payload with user data (answers_detailed not needed for Supabase but kept for consistency)
     const payload = {
       user: {
         first_name: formData.firstName,
@@ -194,6 +211,7 @@ export const FormFlow = () => {
         canton: formData.canton || null,
       },
       answers: buildAnswerTexts(),
+      answers_detailed: buildAnswersDetailed(),
       score: {
         value: score.raw,
         normalized: score.normalized,
@@ -215,7 +233,7 @@ export const FormFlow = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [buildAnswerTexts, score, openaiResponse]);
+  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse]);
 
   // Book consultation (Outlook Book With Me)
   const handleBookConsultation = useCallback(() => {

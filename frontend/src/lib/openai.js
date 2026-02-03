@@ -54,16 +54,21 @@ function withTimeout(promise, timeoutMs, errorMessage) {
 async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
   const backendUrl = getBackendUrl();
   const url = `${backendUrl}/api/analyze`;
+  // Log full payload so debug panel shows we send all answers to OpenAI (not just a summary)
+  const requestPayload = {
+    user: payload.user,
+    score: payload.score,
+    has_email: payload.has_email,
+    answers: payload.answers || {},
+    answer_count: Object.keys(payload.answers || {}).length,
+  };
+  if (payload.answers_detailed?.length) {
+    requestPayload.answers_detailed = payload.answers_detailed;
+  }
   const logId = addDebugLog(createLog('openai', 'analyze.proxy', {
     endpoint: url,
     method: 'POST',
-    payload: {
-      payload_summary: {
-        user: payload.user,
-        score: payload.score,
-        answer_count: Object.keys(payload.answers || {}).length,
-      },
-    },
+    payload: requestPayload,
     isHighlighted: true,
     highlightReason: 'openai_response',
   }));
