@@ -2,13 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { 
-  AlertTriangle, 
-  Mail, 
-  Calendar,
-  ArrowRight,
-} from 'lucide-react';
+import { Mail, Calendar, ArrowRight } from 'lucide-react';
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 
 export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation }) => {
