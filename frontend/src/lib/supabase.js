@@ -95,8 +95,30 @@ export async function saveSubmission(payload, openaiResponse) {
     throw subError;
   }
 
-  // 2. Save email outputs (only if user provided email and we have OpenAI response)
-  if (payload.has_email && openaiResponse?.email_user && openaiResponse?.email_sales) {
+  // 2. Save email outputs (only if user provided email AND OpenAI returned both email_user and email_sales)
+  const hasEmailOutputs =
+    payload.has_email &&
+    openaiResponse?.email_user &&
+    openaiResponse?.email_sales &&
+    typeof openaiResponse.email_user === 'object' &&
+    typeof openaiResponse.email_sales === 'object' &&
+    openaiResponse.email_user?.body_markdown != null &&
+    openaiResponse.email_sales?.body_markdown != null;
+
+  if (!payload.has_email) {
+    // No email provided by user → no email_outputs row (expected)
+  } else if (!hasEmailOutputs) {
+    console.warn(
+      '[Supabase] email_outputs not written: OpenAI did not return email_user and/or email_sales with body_markdown. ' +
+        'Check assistant instructions so it returns { "email_user": { "subject": "...", "body_markdown": "..." }, "email_sales": { ... } }. ' +
+        'Current: email_user=' +
+        (openaiResponse?.email_user ? 'present' : 'null') +
+        ', email_sales=' +
+        (openaiResponse?.email_sales ? 'present' : 'null')
+    );
+  }
+
+  if (hasEmailOutputs) {
     const emailLogId = addDebugLog(createLog('supabase', 'insert.email_outputs', {
       endpoint: 'email_outputs',
       method: 'INSERT',

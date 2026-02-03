@@ -64,7 +64,11 @@ L’assistant a le questionnaire dans son vector store ; envoyer **answers** + *
 
 ## Réponse attendue de l’assistant OpenAI
 
-L’assistant doit renvoyer **un seul objet JSON valide** (pas de texte avant/après), avec au minimum :
+L’assistant doit renvoyer **un seul objet JSON valide** (pas de texte avant/après).
+
+Les **instructions complètes** de l'assistant (contenu des 3 sorties + format JSON) sont dans **[docs/assistant-prompt-nlpd.md](assistant-prompt-nlpd.md)**. À copier dans la configuration de l'assistant OpenAI.
+
+L'assistant doit renvoyer **un seul objet JSON valide** (pas de texte avant/après), avec au minimum :
 
 ```json
 {
@@ -85,7 +89,7 @@ L’assistant doit renvoyer **un seul objet JSON valide** (pas de texte avant/ap
 - **email_user** : rapport personnalisé pour le prospect (envoyé par email). Doit contenir `subject` et `body_markdown`.
 - **email_sales** : analyse commerciale pour l’équipe Ypsys. Doit contenir `subject` et `body_markdown`.
 
-Si `email_user` ou `email_sales` est `null`, le frontend ne pourra pas enregistrer les lignes dans `email_outputs` (la soumission dans `form_submissions` est quand même enregistrée).
+**Important** : Si `email_user` ou `email_sales` est `null` (ou sans `body_markdown`), le frontend **n’écrit pas** dans `email_outputs`. La table reste vide tant que l’assistant OpenAI ne renvoie pas les deux objets avec `subject` et `body_markdown`. La soumission dans `form_submissions` est toujours enregistrée ; un message dans la console (mode debug) indique pourquoi `email_outputs` n’a pas été rempli.
 
 ---
 
