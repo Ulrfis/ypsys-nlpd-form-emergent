@@ -38,7 +38,12 @@ export const supabase = createClient(
 );
 
 /**
- * Save form submission to Supabase
+ * Save form submission to Supabase.
+ *
+ * Relation garantie : une soumission = un email (payload.user.email) + les réponses (payload.answers)
+ * + la sortie OpenAI (openaiResponse) générée pour ces mêmes réponses (même session).
+ * form_submissions stocke tout (email, answers, teaser_text, lead_temperature) ; email_outputs
+ * est lié par submission_id + user_email pour que Supabase ait le lien explicite email ↔ réponse OpenAI.
  */
 export async function saveSubmission(payload, openaiResponse) {
   // LOG 1: Insert form_submissions
@@ -134,6 +139,7 @@ export async function saveSubmission(payload, openaiResponse) {
       .from('email_outputs')
       .insert({
         submission_id: submission.id,
+        user_email: payload.user.email,
         email_user_markdown: openaiResponse.email_user.body_markdown,
         email_user_subject: openaiResponse.email_user.subject,
         email_sales_markdown: openaiResponse.email_sales.body_markdown,

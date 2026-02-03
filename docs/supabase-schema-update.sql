@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS public.email_outputs (
 
   submission_id uuid NOT NULL REFERENCES public.form_submissions (id) ON DELETE CASCADE,
 
+  -- Email du prospect (lien explicite : cette sortie OpenAI est pour cet email)
+  user_email text,
+
   -- Sortie 2 : rapport personnalisé pour le prospect (email)
   email_user_subject text,
   email_user_markdown text,
@@ -158,6 +161,13 @@ BEGIN
   END IF;
 
   -- email_outputs
+  SELECT EXISTS (SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name = 'email_outputs' AND column_name = 'user_email')
+  INTO col_exists;
+  IF NOT col_exists THEN
+    ALTER TABLE public.email_outputs ADD COLUMN user_email text;
+  END IF;
+
   SELECT EXISTS (SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public' AND table_name = 'email_outputs' AND column_name = 'email_user_markdown')
   INTO col_exists;

@@ -114,12 +114,15 @@ Quand l’utilisateur a saisi son email et validé :
 
 1. **form_submissions** : une ligne avec les infos utilisateur, `answers`, score, `teaser_text`, etc.
 2. **email_outputs** (si `has_email` et `openaiResponse.email_user` et `openaiResponse.email_sales` non nuls) :
-   - `submission_id`
+   - `submission_id` (lien vers form_submissions)
+   - `user_email` (email du prospect, lien explicite avec la sortie OpenAI)
    - `email_user_markdown`, `email_user_subject`
    - `email_sales_markdown`, `email_sales_subject`
    - `lead_temperature`
 
 Les deux réponses détaillées (prospect + commercial) transitent donc : **OpenAI → backend → frontend → Supabase**.
+
+**Relation email ↔ réponses ↔ réponse OpenAI** : L'app utilise l'email saisi dans le formulaire de capture (même session que les réponses envoyées à OpenAI). Une soumission = un email + les réponses (answers) + la sortie OpenAI générée pour ces réponses. Le lien est garanti par le flux : `saveSubmission(payload, openaiResponse)` est appelé une seule fois à la soumission du formulaire, avec `payload.user.email` = email saisi et `openaiResponse` = réponse OpenAI de cette session. Supabase reçoit tout dans `form_submissions` (email, answers, teaser_text, …) et dans `email_outputs` (submission_id + user_email + contenu des emails), ce qui évite tout mélange entre emails et réponses.
 
 ---
 
