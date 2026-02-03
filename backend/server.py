@@ -268,10 +268,10 @@ async def analyze(request: AnalyzeRequest):
 
     try:
         thread = client.beta.threads.create()
-        client.beta.threads.messages.create(thread.id, role="user", content=payload_str)
+        client.beta.threads.messages.create(thread_id=thread.id, role="user", content=payload_str)
         # Garantir assez de tokens pour teaser + 2 emails longs (email_user 400-600 mots, email_sales 500-800 mots)
         run = client.beta.threads.runs.create(
-            thread.id,
+            thread_id=thread.id,
             assistant_id=OPENAI_ASSISTANT_ID,
             max_completion_tokens=8192,
         )
@@ -282,7 +282,7 @@ async def analyze(request: AnalyzeRequest):
             if __import__("time").time() - start > max_wait:
                 raise HTTPException(status_code=504, detail="OpenAI analysis timeout")
             __import__("time").sleep(1.5)
-            run = client.beta.threads.runs.retrieve(thread.id, run.id)
+            run = client.beta.threads.runs.retrieve(thread_id=thread.id, run_id=run.id)
 
         if run.status != "completed":
             raise HTTPException(
@@ -290,7 +290,7 @@ async def analyze(request: AnalyzeRequest):
                 detail=f"OpenAI run failed with status: {run.status}",
             )
 
-        messages = client.beta.threads.messages.list(thread.id)
+        messages = client.beta.threads.messages.list(thread_id=thread.id)
         assistant_msg = next((m for m in messages.data if m.role == "assistant"), None)
         if not assistant_msg or not assistant_msg.content or not assistant_msg.content[0]:
             raise HTTPException(status_code=502, detail="No response from OpenAI assistant")
