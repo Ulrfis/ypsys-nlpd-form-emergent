@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-02-03 (mobile + RGPD/nLPD)
+**Last Updated**: 2026-02-03 (retrait PostHog et bandeau cookies)
 
 ---
 
@@ -295,15 +295,28 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 - **Mobile** : Barre de navigation (Précédent/Suivant) fixe en bas (layout `h-screen` + zone scrollable) ; questionnaire compact (polices plus petites, capsule chapitre supprimée, barre de progression moins haute) ; validation avec touche Entrée après sélection ; CTA et pages sans débordement largeur
 - **Pages simplifiées** : « Votre analyse est prête » — bloc « Aperçu de vos priorités » supprimé ; « Votre diagnostic nLPD » — logo Ypsys, blocs Score/Gaps, Analyse personnalisée et « Vos 3 priorités » supprimés
 - **Audit RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) — inventaire des données, flux, écarts RGPD/nLPD, sécurité technique, synthèse des non-conformités et recommandations
-- **Actions P0/P1 mises en œuvre** : (1) API backend protégée par `X-API-Key` (GET /api/submissions, GET /api/submissions/{id} et GET /api/stats exigent `API_ADMIN_SECRET`) ; (2) Politique de confidentialité `/politique-confidentialite` avec lien depuis LeadCaptureForm ; (3) Bandeau cookies (CookieBanner) + PostHog chargé uniquement après consentement ; (4) Logs debug sanitisés (redactPayload — données personnelles remplacées par `[REDACTED]`)
+- **Actions P0/P1 mises en œuvre** : (1) API backend protégée par `X-API-Key` (GET /api/submissions, GET /api/submissions/{id} et GET /api/stats exigent `API_ADMIN_SECRET`) ; (2) Politique de confidentialité `/politique-confidentialite` avec lien depuis LeadCaptureForm ; (3) Logs debug sanitisés (redactPayload — données personnelles remplacées par `[REDACTED]`). **2026-02-03** : PostHog et bandeau cookies retirés ; pas de cookies ni d’analytics sur le formulaire.
 
-**Friction**: L'audit initial identifiait des écarts (API non protégée, politique absente, PostHog sans consentement, logs contenant des données personnelles) ; la mise en œuvre a nécessité plusieurs fichiers (PrivacyPolicy, CookieConsentContext, CookieBanner, PostHogLoader, backend Depends require_admin_api_key, debugLogger redactPayload).
+**Friction**: L'audit initial identifiait des écarts (API non protégée, politique absente, PostHog sans consentement, logs contenant des données personnelles) ; la mise en œuvre a nécessité plusieurs fichiers (PrivacyPolicy, backend Depends require_admin_api_key, debugLogger redactPayload). Plus tard : décision de ne pas utiliser de cookies ; PostHog et bandeau cookies ont été retirés.
 
-**Resolution**: Application systématique des trois actions prioritaires (P0 : API + politique ; P1 : PostHog après consentement) et sanitisation des logs ; documentation déploiement (API_ADMIN_SECRET) pour clarifier « quand faire quoi ».
-
-**Surprise**: Un bandeau de consentement simple (Tout accepter / Refuser les statistiques) suffit pour aligner PostHog avec RGPD/nLPD ; le chargement conditionnel du script évite tout envoi avant consentement.
+**Resolution**: Application des actions P0 (API + politique) et sanitisation des logs ; documentation déploiement (API_ADMIN_SECRET). Retrait de PostHog et du bandeau cookies (CookieBanner, CookieConsentContext, PostHogLoader) — le formulaire n’utilise aucun cookie ni analytics.
 
 **Time**: ~2h
+
+---
+
+### 2026-02-03 — Retrait PostHog et bandeau cookies 🔷
+
+**Intent**: Ne pas utiliser de cookies ni d’analytics sur le formulaire pour l’instant.
+
+**Outcome**:
+- **PostHog retiré** : suppression de `PostHogLoader.jsx`, `posthog-loader.js` ; plus aucun script PostHog chargé.
+- **Bandeau cookies retiré** : suppression de `CookieBanner.jsx` et `CookieConsentContext.jsx` ; plus de bandeau à la première visite.
+- **App.js** : plus de `CookieConsentProvider`, `CookieBanner`, `PostHogLoader`.
+- **Politique de confidentialité** : section Destinataires sans mention de PostHog ni de cookies statistiques.
+- **Documentation** : README, CHANGELOG (v0.8.0), STORY et [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) alignés (périmètre sans PostHog, pas de cookies).
+
+**Time**: ~30 min
 
 ---
 
@@ -416,8 +429,8 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 **Energy level**: 8/10
 **Current doubt**: Les utilisateurs vont-ils bien voir le bandeau cookies et comprendre « Tout accepter » vs « Refuser les statistiques »?
-**Current satisfaction**: Audit RGPD/nLPD documenté ; politique de confidentialité en place ; API protégée ; PostHog après consentement ; mobile avec barre de nav fixe et CTA visibles.
-**If you stopped now, what would you regret?**: Ne pas avoir documenté les transferts US (OpenAI, PostHog) dans la politique (DPA / clauses types).
+**Current satisfaction**: Audit RGPD/nLPD documenté ; politique de confidentialité en place ; API protégée ; mobile avec barre de nav fixe et CTA visibles. PostHog et bandeau cookies retirés — pas de cookies sur le formulaire.
+**If you stopped now, what would you regret?**: Ne pas avoir documenté les transferts US (OpenAI) dans la politique (DPA / clauses types).
 **One word**: Conforme
 
 ---
@@ -452,7 +465,7 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 **2026-02-03**: Le panneau debug doit afficher le payload **réel** envoyé aux APIs (pas un résumé), sinon on croit à tort que peu de données sont envoyées (ex. OpenAI).
 
-**2026-02-03**: Conformité RGPD/nLPD = audit + actions prioritaires (politique de confidentialité, consentement avant analytics, API protégée, logs sans données personnelles). Un bandeau cookies simple suffit si le script analytics n'est chargé qu'après consentement.
+**2026-02-03**: Conformité RGPD/nLPD = audit + actions prioritaires (politique de confidentialité, API protégée, logs sans données personnelles). PostHog et bandeau cookies retirés : le formulaire n’utilise aucun cookie ni outil d’analytics.
 
 ---
 

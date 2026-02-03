@@ -14,13 +14,23 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ---
 
+## [0.8.0] - 2026-02-03
+
+### Supprimé
+- **PostHog** : retrait complet (PostHogLoader, posthog-loader.js) ; aucun outil d'analytics sur le formulaire
+- **Bandeau cookies** : CookieBanner et CookieConsentContext retirés ; pas de cookies sur le formulaire
+
+### Modifié
+- **Politique de confidentialité** : section Destinataires sans mention de PostHog ni de cookies statistiques
+- **Documentation** : README, audit RGPD/nLPD et STORY alignés (périmètre sans PostHog, pas de bandeau cookies)
+
+---
+
 ## [0.7.0] - 2026-02-03
 
 ### Ajouté
 - **Politique de confidentialité** : page `/politique-confidentialite` (structure alignée sur la politique de cookies Ypsys) avec sections Introduction, Données collectées, Finalités, Destinataires et transferts, Durée, Droits, Contact ; lien cliquable depuis le formulaire de capture de leads
-- **Bandeau de consentement cookies** : CookieBanner à la première visite ; choix « Refuser les statistiques » / « Tout accepter » ; consentement stocké dans `localStorage` (`nlpd_cookie_consent`)
-- **PostHog après consentement** : PostHog n'est plus chargé dans `index.html` ; chargement uniquement après clic sur « Tout accepter » (CookieConsentContext, PostHogLoader)
-- **Audit RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) — inventaire des données, flux, conformité RGPD/nLPD, sécurité technique, recommandations ; mise en œuvre des actions P0/P1 documentée
+- **Audit RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) — inventaire des données, flux, conformité RGPD/nLPD, sécurité technique, recommandations ; mise en œuvre des actions P0 documentée
 
 ### Modifié
 - **API backend** : routes GET `/api/submissions`, GET `/api/submissions/{id}` et GET `/api/stats` protégées par l'en-tête `X-API-Key` (variable `API_ADMIN_SECRET`) ; sans clé ou si `API_ADMIN_SECRET` non défini → 403

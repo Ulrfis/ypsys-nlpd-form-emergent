@@ -40,7 +40,7 @@ Créer un outil d'évaluation de conformité à la nouvelle Loi fédérale sur l
 - [x] Support mode sombre/clair
 - [x] Configuration Railway pour déploiement
 - [x] Version mobile : CTA et barre de navigation toujours visibles, questionnaire compact
-- [x] Conformité RGPD/nLPD : politique de confidentialité, bandeau cookies, PostHog après consentement, API backend protégée, logs sanitisés
+- [x] Conformité RGPD/nLPD : politique de confidentialité, API backend protégée, logs sanitisés (pas de cookies ni d’analytics sur le formulaire)
 
 ---
 
@@ -113,7 +113,7 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 │   │   ├── components/     # Composants React
 │   │   ├── data/           # Données du questionnaire
 │   │   ├── lib/            # Supabase, OpenAI clients
-│   │   └── context/        # Theme, consentement cookies
+│   │   └── context/        # Theme
 │   └── public/
 ├── backend/
 │   ├── server.py           # FastAPI app
@@ -159,7 +159,7 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - Timeout OpenAI de 45 secondes avec fallback local
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
 - Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` ; les logs sont sanitisés (données personnelles remplacées par `[REDACTED]`) pour conformité RGPD/nLPD
-- **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, bandeau cookies, PostHog chargé uniquement après consentement, API protégée par `X-API-Key`, logs sanitisés)
+- **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, API protégée par `X-API-Key`, logs sanitisés). Aucun cookie ni outil d’analytics (PostHog retiré) sur le formulaire.
 
 ---
 

@@ -88,17 +88,6 @@ export const PrivacyPolicy = () => {
                     Les données sont enregistrées dans une base de données hébergée par Supabase (UE/suisse selon projet).
                     L’analyse des réponses et la génération du rapport sont effectuées via OpenAI (États-Unis) ;
                     des garanties appropriées (clauses types ou équivalent) sont mises en œuvre pour ce transfert.
-                    Si vous acceptez les cookies statistiques, des données de navigation peuvent être envoyées
-                    à PostHog (États-Unis) ; voir la{' '}
-                    <a
-                      href={POLICY_COOKIES_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary underline hover:no-underline"
-                    >
-                      politique de cookies
-                    </a>
-                    .
                   </p>
                 </section>
 
