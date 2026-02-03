@@ -33,19 +33,42 @@ export function createLog(type, operation, request = {}) {
   };
 }
 
+/** Champs considérés comme données personnelles : ne pas persister en clair dans les logs (RGPD/nLPD). */
+const SENSITIVE_PAYLOAD_KEYS = [
+  'apiKey', 'token', 'password',
+  'user_email', 'email', 'user_first_name', 'user_last_name', 'first_name', 'last_name',
+  'company_name', 'company', 'industry', 'canton', 'size',
+  'answers', 'answers_detailed',
+  'email_user_subject', 'email_user_markdown', 'email_sales_subject', 'email_sales_markdown',
+  'body_markdown', 'subject',
+];
+
+function redactPayload(obj, depth = 0) {
+  if (depth > 5) return '[MAX_DEPTH]';
+  if (obj === null || typeof obj !== 'object') return obj;
+  const out = Array.isArray(obj) ? [] : {};
+  for (const [key, value] of Object.entries(obj)) {
+    const keyLower = key.toLowerCase();
+    const isSensitive = SENSITIVE_PAYLOAD_KEYS.some(k => keyLower === k.toLowerCase() || keyLower.includes(k.toLowerCase()));
+    if (isSensitive && value != null) {
+      out[key] = Array.isArray(value) ? '[REDACTED_ARRAY]' : '[REDACTED]';
+    } else {
+      out[key] = typeof value === 'object' && value !== null ? redactPayload(value, depth + 1) : value;
+    }
+  }
+  return out;
+}
+
 /**
- * Sanitize request to remove sensitive data
+ * Sanitize request to remove sensitive data (API keys, tokens, personal data for RGPD/nLPD).
  */
 function sanitizeRequest(request) {
   const sanitized = { ...request };
 
-  // Remove API keys and tokens
   if (sanitized.payload) {
-    const payload = { ...sanitized.payload };
-    // Don't log these sensitive fields
-    delete payload.apiKey;
-    delete payload.token;
-    sanitized.payload = payload;
+    sanitized.payload = redactPayload(sanitized.payload);
+    delete sanitized.payload.apiKey;
+    delete sanitized.payload.token;
   }
 
   if (sanitized.headers) {
@@ -60,15 +83,16 @@ function sanitizeRequest(request) {
 }
 
 /**
- * Create response update for a log
+ * Create response update for a log (response.data may contain sensitive content; redact for RGPD/nLPD).
  */
 export function createLogUpdate(response, duration, status = 'success') {
+  const data = response.data != null ? redactPayload(response.data) : null;
   return {
     status,
     duration,
     response: {
       status: response.status || null,
-      data: response.data || null,
+      data,
       error: response.error || null,
     },
   };

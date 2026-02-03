@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
@@ -113,6 +113,19 @@ submissions_store = []
 status_checks_store = []
 
 
+# ============ ADMIN API KEY (protect read routes - RGPD/nLPD) ============
+API_ADMIN_SECRET = os.environ.get("API_ADMIN_SECRET", "").strip()
+
+
+async def require_admin_api_key(x_api_key: str = Header(None, alias="X-API-Key")):
+    """Require X-API-Key header for read routes. If API_ADMIN_SECRET is not set, deny access."""
+    if not API_ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Admin API not configured")
+    if not x_api_key or x_api_key != API_ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Invalid or missing API key")
+    return True
+
+
 # ============ ROUTES ============
 
 @api_router.get("/")
@@ -150,8 +163,12 @@ async def create_submission(input: FormSubmissionCreate):
 
 
 @api_router.get("/submissions", response_model=List[FormSubmission])
-async def get_submissions(limit: int = 100, skip: int = 0):
-    """Get all form submissions"""
+async def get_submissions(
+    limit: int = 100,
+    skip: int = 0,
+    _: bool = Depends(require_admin_api_key),
+):
+    """Get all form submissions (requires X-API-Key header)."""
     try:
         return submissions_store[skip:skip+limit]
     except Exception as e:
@@ -160,8 +177,11 @@ async def get_submissions(limit: int = 100, skip: int = 0):
 
 
 @api_router.get("/submissions/{submission_id}", response_model=FormSubmission)
-async def get_submission(submission_id: str):
-    """Get a specific form submission by ID"""
+async def get_submission(
+    submission_id: str,
+    _: bool = Depends(require_admin_api_key),
+):
+    """Get a specific form submission by ID (requires X-API-Key header)."""
     try:
         for submission in submissions_store:
             if submission.get('id') == submission_id:
@@ -176,8 +196,8 @@ async def get_submission(submission_id: str):
 
 # Statistics
 @api_router.get("/stats")
-async def get_statistics():
-    """Get submission statistics"""
+async def get_statistics(_: bool = Depends(require_admin_api_key)):
+    """Get submission statistics (requires X-API-Key header)."""
     try:
         total = len(submissions_store)
         

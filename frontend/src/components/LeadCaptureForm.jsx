@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -274,8 +275,14 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
               </div>
               
               <p className="text-xs text-muted-foreground">
-                Vos données sont traitées conformément à notre politique de confidentialité 
-                et ne seront jamais partagées avec des tiers.
+                Vos données sont traitées conformément à notre{' '}
+                <Link
+                  to="/politique-confidentialite"
+                  className="text-primary underline hover:no-underline font-medium"
+                >
+                  politique de confidentialité
+                </Link>
+                {' '}et ne seront jamais partagées avec des tiers.
               </p>
             </div>
 

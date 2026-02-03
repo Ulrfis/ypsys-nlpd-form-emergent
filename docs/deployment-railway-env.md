@@ -36,6 +36,20 @@ Sans elles, la sauvegarde des soumissions du formulaire échoue (« Failed to fe
 | **OPENAI_API_KEY** | Clé API OpenAI (route `/api/analyze`). **Obligatoire** — sans elle le backend ne appelle jamais l'API et renvoie toujours email_user=null, email_sales=null. À créer dans [OpenAI API keys](https://platform.openai.com/api-keys). |
 | **OPENAI_ASSISTANT_ID** | ID de l’assistant OpenAI. |
 | **CORS_ORIGINS** | (Optionnel) Origines autorisées, séparées par des virgules. Par défaut le backend accepte les requêtes du même domaine. |
+| **API_ADMIN_SECRET** | (Optionnel) Voir section ci-dessous. |
+
+### API_ADMIN_SECRET : quand faire quoi ?
+
+Les routes **GET /api/submissions**, **GET /api/submissions/{id}** et **GET /api/stats** permettent de lire les soumissions du formulaire. Pour la conformité RGPD/nLPD, elles sont **protégées** : sans clé secrète, elles renvoient **403**.
+
+- **Vous ne consultez les données que dans Supabase** (dashboard Supabase, Dreamlit, exports, etc.)  
+  → **Vous n’avez rien à faire.** Ne définissez pas `API_ADMIN_SECRET`. Ces routes API restent refusées (403), ce qui est correct.
+
+- **Vous avez un outil (script, back-office, autre app) qui appelle GET /api/submissions ou /api/stats**  
+  → Définissez `API_ADMIN_SECRET` dans Railway (Variables) à une valeur secrète (ex. une longue chaîne aléatoire). Quand vous appelez l’API, envoyez l’en-tête :  
+  `X-API-Key: <la même valeur que API_ADMIN_SECRET>`.
+
+**En résumé** : si vous n’utilisez pas ces routes pour lire les données, n’ajoutez pas `API_ADMIN_SECRET`. Si vous les utilisez, ajoutez la variable et passez sa valeur dans l’en-tête `X-API-Key`.
 
 ## Dépannage : « Credentials not configured » en prod
 
