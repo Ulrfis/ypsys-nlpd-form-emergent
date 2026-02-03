@@ -2,6 +2,7 @@
 
 **Application** : Formulaire nLPD Ypsys  
 **Date** : 3 février 2026  
+**Dernière mise à jour** : 3 février 2026 (état après mise en œuvre des actions P0/P1)  
 **Périmètre** : Frontend (React), Backend (FastAPI), Supabase, OpenAI, PostHog
 
 ---
@@ -53,7 +54,7 @@ L’application collecte des **données personnelles** (nom, prénom, email, ent
 
 | Article / Principe | Constat | Risque |
 |-------------------|---------|--------|
-| **Art. 13 / 14 (information)** | Aucune page « Politique de confidentialité » ni « Mentions légales » ; le formulaire indique « politique de confidentialité » sans lien. | Manque de transparence, difficulté à prouver l’information préalable. |
+| **Art. 13 / 14 (information)** | **Corrigé** : page `/politique-confidentialite` en place, lien depuis LeadCaptureForm. | —, difficulté à prouver l’information préalable. |
 | **Art. 28 (sous-traitant)** | Pas de mention de sous-traitants (OpenAI, Supabase, PostHog, hébergeur) ni de garanties (clauses type ou équivalent). | Responsabilité du responsable de traitement, contrôles CNIL. |
 | **Art. 44 et s. (transferts)** | Données envoyées à OpenAI (US) et PostHog (US). Pas de mécanisme explicite (clauses types, DPA, etc.) ni d’information dans la politique. | Transferts illicites au sens RGPD. |
 | **Art. 5 (limitation de la finalité)** | Consentement unique « résultats + contact YPSYS » ; pas de dissociation rapport / prospection. | Moins de granularité, possible refus partiel. |
@@ -81,23 +82,15 @@ La nLPD (révision en vigueur depuis septembre 2023) est alignée sur les princi
 
 ## 5. Sécurité technique
 
-### 5.1 Critique : API backend non protégée
+### 5.1 API backend (état : corrigé)
 
-- **GET `/api/submissions`** : Retourne toutes les soumissions (jusqu’à `limit`), sans authentification.
-- **GET `/api/submissions/{id}`** : Retourne une soumission par ID, sans contrôle d’accès.
-- **GET `/api/stats`** : Statistiques agrégées, sans authentification.
+- **GET `/api/submissions`**, **GET `/api/submissions/{id}`**, **GET `/api/stats`** : Protégées par l'en-tête **`X-API-Key`** ; la valeur doit correspondre à **`API_ADMIN_SECRET`**. Si non défini, ces routes renvoient **403**. Voir `backend/.env.example` et `docs/deployment-railway-env.md`.
 
-En production, toute personne connaissant l’URL du backend peut **extraire l’intégralité des données personnelles** (identité, réponses, emails). **Risque majeur** pour la vie privée et la conformité.
+### 5.2 Logs debug et localStorage (état : corrigé)
 
-**Recommandation** : Supprimer ou désactiver ces routes en production, ou les protéger par authentification forte (API key, JWT, rôle service) et limiter l’accès au seul usage interne (dashboard admin).
-
-### 5.2 Logs debug et localStorage
-
-- **DebugContext** : En mode debug (`?debug=true`), les requêtes (Supabase, OpenAI) sont loguées avec un **payload contenant `user`, `answers`, `score`**.
-- **sanitizeLog** / **sanitizeRequest** : Seuls `apiKey`, `token` et `Authorization` sont retirés. Les **données personnelles (email, nom, réponses)** restent dans le payload logué.
-- **localStorage** : Ces logs sont persistés dans `localStorage` sous la clé `nlpd_debug_logs` (jusqu’à 7 jours, 100 entrées).
-
-Conséquence : sur un poste partagé ou un appareil non sécurisé, des **données personnelles** peuvent être lues dans le navigateur. **Recommandation** : en production, désactiver complètement le mode debug ou ne jamais logger le payload complet ; si besoin de debug, anonymiser (hash email, pas de réponses en clair).
+- **DebugContext** : En mode debug (`?debug=true`), les requêtes sont loguées puis **sanitisées** avant stockage.
+- **sanitizeLog** / **redactPayload** : Les champs considérés comme données personnelles (`user`, `email`, `answers`, `answers_detailed`, etc.) sont remplacés par `[REDACTED]` dans le payload et dans la réponse loguée. Les logs en `localStorage` (`nlpd_debug_logs`) ne contiennent plus de données personnelles en clair.
+- **Recommandation restante** : en production, désactiver le mode debug si non nécessaire.
 
 ### 5.3 CORS
 
@@ -107,25 +100,24 @@ Conséquence : sur un poste partagé ou un appareil non sécurisé, des **donné
 
 - Les soumissions sont aussi stockées en mémoire dans `submissions_store` (backend). En cas de redémarrage, perte des données ; en production, la source de vérité est Supabase. **Risque** : si le backend est exposé (voir § 5.1), ces données le sont aussi.
 
-### 5.5 PostHog (analytics)
+### 5.5 PostHog (analytics) (état : corrigé)
 
-- Script PostHog chargé dans `index.html`, clé API en clair, envoi vers `us.i.posthog.com`.
-- Pas de consentement préalable (cookie / bandeau) avant activation.
-- Personnes potentiellement identifiées ou associées à des événements (pages, clics). **Conforme RGPD/nLPD** seulement si : consentement préalable au dépôt de cookies / analytics, information dans la politique, et garanties pour le transfert US (DPA, clauses types).
+- PostHog n'est **plus** chargé dans `index.html`. Un **bandeau de consentement cookies** (CookieBanner) s'affiche à la première visite ; PostHog n'est chargé qu'après clic sur « Tout accepter ». Le consentement est enregistré dans `localStorage` (`nlpd_cookie_consent`). Voir § 9.
+- **Recommandation restante** : documenter dans la politique le transfert PostHog vers les US et les garanties (DPA / clauses types) si applicable.
 
 ---
 
 ## 6. Synthèse des non-conformités et risques
 
-| Priorité | Thème | Action requise |
-|----------|--------|-----------------|
-| **P0** | API `/api/submissions` et `/api/submissions/{id}` accessibles sans auth | Protéger ou désactiver en production |
-| **P0** | Absence de politique de confidentialité | Créer une page et y lier depuis le formulaire |
-| **P1** | Transferts US (OpenAI, PostHog) non documentés / non encadrés | Documenter, DPA / clauses types, mention dans la politique |
-| **P1** | PostHog sans consentement préalable | Activer seulement après consentement (cookie banner / préférences) |
-| **P2** | Logs debug contenant des données personnelles | Anonymiser ou désactiver en prod |
-| **P2** | Consentement unique (rapport + prospection) | Optionnel : séparer « envoi du rapport » et « contact commercial » |
-| **P2** | Liste des sous-traitants | Publier dans la politique et encadrer par contrats / DPA |
+| Priorité | Thème | Action requise | Statut |
+|----------|--------|-----------------|--------|
+| **P0** | API `/api/submissions` et `/api/submissions/{id}` accessibles sans auth | Protéger par X-API-Key | ✅ Fait |
+| **P0** | Absence de politique de confidentialité | Créer une page et y lier depuis le formulaire | ✅ Fait |
+| **P1** | Transferts US (OpenAI, PostHog) non documentés / non encadrés | Documenter, DPA / clauses types, mention dans la politique | À faire |
+| **P1** | PostHog sans consentement préalable | Activer seulement après consentement (cookie banner) | ✅ Fait |
+| **P2** | Logs debug contenant des données personnelles | Anonymiser ou désactiver en prod | ✅ Fait (sanitisation) |
+| **P2** | Consentement unique (rapport + prospection) | Optionnel : séparer « envoi du rapport » et « contact commercial » | Optionnel |
+| **P2** | Liste des sous-traitants | Publier dans la politique et encadrer par contrats / DPA | À faire |
 
 ---
 

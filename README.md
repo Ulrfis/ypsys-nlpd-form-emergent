@@ -19,7 +19,7 @@ Formulaire interactif d'auto-diagnostic de conformité nLPD pour les cabinets m�
 
 ## Source of Truth
 - **Brief/PRD Notion**: [PRD original fourni par le client]
-- **Last Sync**: 2026-01-28
+- **Last Sync**: 2026-02-03
 
 ---
 
@@ -39,6 +39,8 @@ Créer un outil d'évaluation de conformité à la nouvelle Loi fédérale sur l
 - [x] Sauvegarde des données dans Supabase (Europe)
 - [x] Support mode sombre/clair
 - [x] Configuration Railway pour déploiement
+- [x] Version mobile : CTA et barre de navigation toujours visibles, questionnaire compact
+- [x] Conformité RGPD/nLPD : politique de confidentialité, bandeau cookies, PostHog après consentement, API backend protégée, logs sanitisés
 
 ---
 
@@ -93,6 +95,7 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 | **OPENAI_API_KEY** | Clé API OpenAI (pour la route `/api/analyze`) |
 | **OPENAI_ASSISTANT_ID** | ID de l’assistant OpenAI |
 | **CORS_ORIGINS** | (Optionnel) Origines autorisées, séparées par des virgules. Par défaut : `http://localhost:3000`, `http://127.0.0.1:3000` |
+| **API_ADMIN_SECRET** | (Optionnel) Clé secrète pour GET `/api/submissions` et `/api/stats`. Si définie, exige l'en-tête `X-API-Key`. Voir [docs/deployment-railway-env.md](docs/deployment-railway-env.md). |
 
 ---
 
@@ -110,7 +113,7 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 │   │   ├── components/     # Composants React
 │   │   ├── data/           # Données du questionnaire
 │   │   ├── lib/            # Supabase, OpenAI clients
-│   │   └── context/        # Theme context
+│   │   └── context/        # Theme, consentement cookies
 │   └── public/
 ├── backend/
 │   ├── server.py           # FastAPI app
@@ -119,6 +122,8 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 │   ├── deployment-railway-env.md   # Variables Railway, dépannage
 │   ├── openai-analyze-and-supabase-flow.md  # Format API analyze, flux Supabase
 │   ├── supabase-schema-update.sql  # Script SQL schéma Supabase (tables + colonnes)
+│   ├── audit-securite-rgpd-nlpd.md # Audit sécurité et conformité RGPD/nLPD
+│   ├── assistant-prompt-nlpd.md    # Prompt assistant OpenAI nLPD
 │   └── debug-mode-usage.md
 ├── memory/
 │   └── PRD.md              # Documentation technique
@@ -153,7 +158,8 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - Le formulaire est entièrement en français
 - Timeout OpenAI de 45 secondes avec fallback local
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
-- Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` (toutes les réponses)
+- Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` ; les logs sont sanitisés (données personnelles remplacées par `[REDACTED]`) pour conformité RGPD/nLPD
+- **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, bandeau cookies, PostHog chargé uniquement après consentement, API protégée par `X-API-Key`, logs sanitisés)
 
 ---
 

@@ -14,6 +14,27 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ---
 
+## [0.7.0] - 2026-02-03
+
+### Ajouté
+- **Politique de confidentialité** : page `/politique-confidentialite` (structure alignée sur la politique de cookies Ypsys) avec sections Introduction, Données collectées, Finalités, Destinataires et transferts, Durée, Droits, Contact ; lien cliquable depuis le formulaire de capture de leads
+- **Bandeau de consentement cookies** : CookieBanner à la première visite ; choix « Refuser les statistiques » / « Tout accepter » ; consentement stocké dans `localStorage` (`nlpd_cookie_consent`)
+- **PostHog après consentement** : PostHog n'est plus chargé dans `index.html` ; chargement uniquement après clic sur « Tout accepter » (CookieConsentContext, PostHogLoader)
+- **Audit RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) — inventaire des données, flux, conformité RGPD/nLPD, sécurité technique, recommandations ; mise en œuvre des actions P0/P1 documentée
+
+### Modifié
+- **API backend** : routes GET `/api/submissions`, GET `/api/submissions/{id}` et GET `/api/stats` protégées par l'en-tête `X-API-Key` (variable `API_ADMIN_SECRET`) ; sans clé ou si `API_ADMIN_SECRET` non défini → 403
+- **Logs debug** : sanitisation des payloads (redactPayload) — données personnelles (user, email, answers, etc.) remplacées par `[REDACTED]` avant stockage dans localStorage ; conformité RGPD/nLPD
+- **Version mobile** : CTA et barre de navigation (Précédent/Suivant) toujours visibles sans scroll ; barre de navigation fixe en bas (layout `h-screen` + zone scrollable) ; questionnaire compact (polices plus petites, capsule chapitre supprimée, barre de progression moins haute) ; validation avec touche Entrée après sélection d'une réponse ; boutons et pages sans débordement largeur
+- **Page « Votre analyse est prête »** : bloc « Aperçu de vos priorités » supprimé ; conservés : score gauge, carte niveau de risque, « Obtenez votre rapport complet par email »
+- **Page « Votre diagnostic nLPD »** : logo Ypsys en header (remplace icône + texte) ; blocs « Score et Gaps » et « Analyse personnalisée » supprimés ; bloc « Vos 3 priorités » supprimé ; conservés : « Rapport complet envoyé par email », calendrier consultation, CTA
+
+### Documentation
+- [docs/deployment-railway-env.md](docs/deployment-railway-env.md) : section API_ADMIN_SECRET (quand définir, quand ne pas définir)
+- [backend/.env.example](backend/.env.example) : commentaire pour API_ADMIN_SECRET
+
+---
+
 ## [0.6.0] - 2026-02-03
 
 ### Ajouté

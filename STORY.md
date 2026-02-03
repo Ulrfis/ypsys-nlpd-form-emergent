@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-02-03
+**Last Updated**: 2026-02-03 (mobile + RGPD/nLPD)
 
 ---
 
@@ -285,6 +285,28 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 ---
 
+### 2026-02-03 — Mobile responsive et conformité RGPD/nLPD 🔷
+
+**Intent**: Améliorer l'expérience smartphone (CTA et barre de navigation toujours visibles, pas de débordement) ; renforcer la conformité RGPD et nLPD (audit, politique de confidentialité, consentement cookies, API protégée, logs sanitisés).
+
+**Tool**: Cursor
+
+**Outcome**:
+- **Mobile** : Barre de navigation (Précédent/Suivant) fixe en bas (layout `h-screen` + zone scrollable) ; questionnaire compact (polices plus petites, capsule chapitre supprimée, barre de progression moins haute) ; validation avec touche Entrée après sélection ; CTA et pages sans débordement largeur
+- **Pages simplifiées** : « Votre analyse est prête » — bloc « Aperçu de vos priorités » supprimé ; « Votre diagnostic nLPD » — logo Ypsys, blocs Score/Gaps, Analyse personnalisée et « Vos 3 priorités » supprimés
+- **Audit RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) — inventaire des données, flux, écarts RGPD/nLPD, sécurité technique, synthèse des non-conformités et recommandations
+- **Actions P0/P1 mises en œuvre** : (1) API backend protégée par `X-API-Key` (GET /api/submissions, GET /api/submissions/{id} et GET /api/stats exigent `API_ADMIN_SECRET`) ; (2) Politique de confidentialité `/politique-confidentialite` avec lien depuis LeadCaptureForm ; (3) Bandeau cookies (CookieBanner) + PostHog chargé uniquement après consentement ; (4) Logs debug sanitisés (redactPayload — données personnelles remplacées par `[REDACTED]`)
+
+**Friction**: L'audit initial identifiait des écarts (API non protégée, politique absente, PostHog sans consentement, logs contenant des données personnelles) ; la mise en œuvre a nécessité plusieurs fichiers (PrivacyPolicy, CookieConsentContext, CookieBanner, PostHogLoader, backend Depends require_admin_api_key, debugLogger redactPayload).
+
+**Resolution**: Application systématique des trois actions prioritaires (P0 : API + politique ; P1 : PostHog après consentement) et sanitisation des logs ; documentation déploiement (API_ADMIN_SECRET) pour clarifier « quand faire quoi ».
+
+**Surprise**: Un bandeau de consentement simple (Tout accepter / Refuser les statistiques) suffit pour aligner PostHog avec RGPD/nLPD ; le chargement conditionnel du script évite tout envoi avant consentement.
+
+**Time**: ~2h
+
+---
+
 ## Pivots & Breakages
 
 ### 2026-01-27 — Clé Supabase incorrecte
@@ -390,6 +412,14 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 **If you stopped now, what would you regret?**: Ne pas avoir validé en prod un flux complet avec email_user/email_sales non null.
 **One word**: Aligné
 
+### 2026-02-03 — Pulse Check #6 (mobile + RGPD/nLPD)
+
+**Energy level**: 8/10
+**Current doubt**: Les utilisateurs vont-ils bien voir le bandeau cookies et comprendre « Tout accepter » vs « Refuser les statistiques »?
+**Current satisfaction**: Audit RGPD/nLPD documenté ; politique de confidentialité en place ; API protégée ; PostHog après consentement ; mobile avec barre de nav fixe et CTA visibles.
+**If you stopped now, what would you regret?**: Ne pas avoir documenté les transferts US (OpenAI, PostHog) dans la politique (DPA / clauses types).
+**One word**: Conforme
+
 ---
 
 ## Insights Vault
@@ -422,6 +452,8 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 **2026-02-03**: Le panneau debug doit afficher le payload **réel** envoyé aux APIs (pas un résumé), sinon on croit à tort que peu de données sont envoyées (ex. OpenAI).
 
+**2026-02-03**: Conformité RGPD/nLPD = audit + actions prioritaires (politique de confidentialité, consentement avant analytics, API protégée, logs sans données personnelles). Un bandeau cookies simple suffit si le script analytics n'est chargé qu'après consentement.
+
 ---
 
 ## Artifact Links
@@ -436,6 +468,8 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 | 2026-01-28 | Config | /app/railway.json | Configuration Railway |
 | 2026-02-03 | Doc | docs/openai-analyze-and-supabase-flow.md | Format API analyze, flux Supabase |
 | 2026-02-03 | SQL | docs/supabase-schema-update.sql | Schéma Supabase (form_submissions, email_outputs) |
+| 2026-02-03 | Doc | docs/audit-securite-rgpd-nlpd.md | Audit sécurité et conformité RGPD/nLPD |
+| 2026-02-03 | Doc | docs/assistant-prompt-nlpd.md | Prompt assistant OpenAI nLPD |
 
 ---
 
