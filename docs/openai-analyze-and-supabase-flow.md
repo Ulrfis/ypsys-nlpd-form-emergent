@@ -113,14 +113,14 @@ Le backend renvoie exactement ce qu’il extrait de la réponse OpenAI (ou un fa
 Quand l’utilisateur a saisi son email et validé :
 
 1. **form_submissions** : une ligne avec les infos utilisateur, `answers`, score, `teaser_text`, etc.
-2. **email_outputs** (si `has_email` et `openaiResponse.email_user` et `openaiResponse.email_sales` non nuls) :
-   - `submission_id` (lien vers form_submissions)
-   - `user_email` (email du prospect, lien explicite avec la sortie OpenAI)
-   - `email_user_markdown`, `email_user_subject`
-   - `email_sales_markdown`, `email_sales_subject`
-   - `lead_temperature`
+2. **email_outputs** (uniquement si OpenAI a renvoyé `email_user` et `email_sales` avec `subject` et `body_markdown`) :
+   - `submission_id`, `user_email`, `lead_temperature`
+   - `email_user_subject`, `email_user_markdown`
+   - `email_sales_subject`, `email_sales_markdown`
 
-Les deux réponses détaillées (prospect + commercial) transitent donc : **OpenAI → backend → frontend → Supabase**.
+   **Important** : L'app n'écrit dans `email_outputs` que lorsque toutes ces données sont présentes. Dreamlit envoie les emails dès qu'une nouvelle ligne est créée ; il faut donc écrire toutes les données en une seule fois pour que l'envoi ait les textes générés par OpenAI.
+
+Les deux réponses détaillées (prospect + commercial) transitent donc : **OpenAI → backend → frontend → Supabase** (en une seule insertion).
 
 **Relation email ↔ réponses ↔ réponse OpenAI** : L'app utilise l'email saisi dans le formulaire de capture (même session que les réponses envoyées à OpenAI). Une soumission = un email + les réponses (answers) + la sortie OpenAI générée pour ces réponses. Le lien est garanti par le flux : `saveSubmission(payload, openaiResponse)` est appelé une seule fois à la soumission du formulaire, avec `payload.user.email` = email saisi et `openaiResponse` = réponse OpenAI de cette session. Supabase reçoit tout dans `form_submissions` (email, answers, teaser_text, …) et dans `email_outputs` (submission_id + user_email + contenu des emails), ce qui évite tout mélange entre emails et réponses.
 

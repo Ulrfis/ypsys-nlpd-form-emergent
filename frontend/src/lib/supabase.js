@@ -42,8 +42,12 @@ export const supabase = createClient(
  *
  * Relation garantie : une soumission = un email (payload.user.email) + les réponses (payload.answers)
  * + la sortie OpenAI (openaiResponse) générée pour ces mêmes réponses (même session).
- * form_submissions stocke tout (email, answers, teaser_text, lead_temperature) ; email_outputs
- * est lié par submission_id + user_email pour que Supabase ait le lien explicite email ↔ réponse OpenAI.
+ *
+ * email_outputs : écrit UNIQUEMENT quand OpenAI a renvoyé email_user et email_sales (subject + body_markdown).
+ * Dreamlit envoie les emails dès qu'une nouvelle ligne est créée dans email_outputs ; il faut donc
+ * écrire TOUTES les données en une seule fois (submission_id, user_email, lead_temperature,
+ * email_user_subject, email_user_markdown, email_sales_subject, email_sales_markdown) pour que
+ * l'envoi d'emails ait les textes générés par OpenAI.
  */
 export async function saveSubmission(payload, openaiResponse) {
   // LOG 1: Insert form_submissions
@@ -100,8 +104,9 @@ export async function saveSubmission(payload, openaiResponse) {
     throw subError;
   }
 
-  // 2. Save email outputs (only if user provided email AND OpenAI returned both email_user and email_sales)
-  const hasEmailOutputs =
+  // 2. Save email outputs UNIQUEMENT quand OpenAI a renvoyé les 3 textes (email_user + email_sales avec subject et body_markdown).
+  // Dreamlit envoie les emails à la création d'une ligne : il faut toutes les données en une seule fois.
+  const hasFullEmailOutputs =
     payload.has_email &&
     openaiResponse?.email_user &&
     openaiResponse?.email_sales &&
@@ -110,12 +115,10 @@ export async function saveSubmission(payload, openaiResponse) {
     openaiResponse.email_user?.body_markdown != null &&
     openaiResponse.email_sales?.body_markdown != null;
 
-  if (!payload.has_email) {
-    // No email provided by user → no email_outputs row (expected)
-  } else if (!hasEmailOutputs) {
+  if (!hasFullEmailOutputs && payload.has_email) {
     console.warn(
       '[Supabase] email_outputs not written: OpenAI did not return email_user and/or email_sales with body_markdown. ' +
-        'Check assistant instructions so it returns { "email_user": { "subject": "...", "body_markdown": "..." }, "email_sales": { ... } }. ' +
+        'Dreamlit needs full content on insert to send emails. Check assistant instructions so it returns { "email_user": { "subject": "...", "body_markdown": "..." }, "email_sales": { ... } }. ' +
         'Current: email_user=' +
         (openaiResponse?.email_user ? 'present' : 'null') +
         ', email_sales=' +
@@ -123,12 +126,13 @@ export async function saveSubmission(payload, openaiResponse) {
     );
   }
 
-  if (hasEmailOutputs) {
+  if (hasFullEmailOutputs) {
     const emailLogId = addDebugLog(createLog('supabase', 'insert.email_outputs', {
       endpoint: 'email_outputs',
       method: 'INSERT',
       payload: {
         submission_id: submission.id,
+        user_email: payload.user.email,
         lead_temperature: openaiResponse.lead_temperature,
       },
     }));
@@ -140,11 +144,11 @@ export async function saveSubmission(payload, openaiResponse) {
       .insert({
         submission_id: submission.id,
         user_email: payload.user.email,
-        email_user_markdown: openaiResponse.email_user.body_markdown,
-        email_user_subject: openaiResponse.email_user.subject,
-        email_sales_markdown: openaiResponse.email_sales.body_markdown,
-        email_sales_subject: openaiResponse.email_sales.subject,
         lead_temperature: openaiResponse.lead_temperature,
+        email_user_subject: openaiResponse.email_user.subject,
+        email_user_markdown: openaiResponse.email_user.body_markdown,
+        email_sales_subject: openaiResponse.email_sales.subject,
+        email_sales_markdown: openaiResponse.email_sales.body_markdown,
       });
 
     updateDebugLog(emailLogId, createLogUpdate(

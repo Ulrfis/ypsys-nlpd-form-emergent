@@ -313,8 +313,10 @@ async def analyze(request: AnalyzeRequest):
                 "email_sales": None,
             }
 
-        email_user = response.get("email_user")
-        email_sales = response.get("email_sales")
+        # Certaines réponses API peuvent avoir les emails sous "full"
+        full = response.get("full") if isinstance(response.get("full"), dict) else {}
+        email_user = response.get("email_user") or full.get("email_user")
+        email_sales = response.get("email_sales") or full.get("email_sales")
         if not email_user or not email_sales:
             logger.warning(
                 "OpenAI response missing email_user and/or email_sales. Keys in response: %s. "
