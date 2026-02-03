@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-02-02
+**Last Updated**: 2026-02-03
 
 ---
 
@@ -258,6 +258,33 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 ---
 
+### 2026-02-03 — Payload OpenAI complet, doc API et schéma Supabase 🔷
+
+**Intent**: S'assurer que l'assistant OpenAI reçoit **toutes** les réponses du questionnaire pour produire une analyse détaillée (teaser + email prospect + email commerciaux), et que la base Supabase est prête à recevoir ces 3 sorties.
+
+**Prompt(s)**:
+- "Il faut envoyer TOUTES les réponses de TOUTES les questions pour que l'assistant OpenAI puisse travailler en détail..."
+- "Mettre à jour la base Supabase pour recevoir toutes les réponses depuis l'application, ainsi que les réponses détaillées et formattées via l'assistant (les 3 réponses: teaser, rapport prospect, contexte commerciaux)"
+
+**Tool**: Cursor
+
+**Outcome**:
+- Payload enrichi vers `/api/analyze` : `answers` (q1..q15) + `answers_detailed` (question_id, question, answer) pour chaque item ; le backend transmet l'intégralité à OpenAI
+- Panneau debug affiche désormais le payload **complet** envoyé (plus seulement un résumé avec answer_count), pour vérifier en prod que toutes les réponses partent bien
+- Documentation [docs/openai-analyze-and-supabase-flow.md](docs/openai-analyze-and-supabase-flow.md) : format requête/réponse API analyze, flux OpenAI → app → Supabase (form_submissions + email_outputs)
+- Script SQL [docs/supabase-schema-update.sql](docs/supabase-schema-update.sql) : création/mise à jour idempotente des tables form_submissions et email_outputs (réponses complètes, teaser_text, lead_temperature, email_user_*, email_sales_*, suivi envoi), avec RLS
+- Dépannage Railway : section dans deployment-railway-env.md pour « Credentials not configured » → variables REACT_APP_* injectées au **build** ; après ajout des variables, il faut **redéployer** (pas seulement redémarrer)
+
+**Friction**: En production, le panneau debug ne montrait qu'un résumé (payload_summary avec user, score, answer_count), donnant l'impression que seules des infos globales étaient envoyées à OpenAI ; en réalité le corps de la requête contenait déjà le payload complet — seul l'affichage debug était réducteur.
+
+**Resolution**: Log debug modifié pour afficher le payload réel (answers + answers_detailed). Enrichissement du payload avec answers_detailed côté frontend pour que l'assistant ait le contexte explicite de chaque question.
+
+**Surprise**: Les variables REACT_APP_* dans Railway ne sont prises en compte qu'au moment du build ; un simple "Apply changes" sans nouveau déploiement laisse le bundle actuel sans ces variables.
+
+**Time**: ~1h
+
+---
+
 ## Pivots & Breakages
 
 ### 2026-01-27 — Clé Supabase incorrecte
@@ -287,6 +314,18 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 - L'animation de chargement masque le temps d'attente perçu
 
 **Emotional state**: Soulagement quand le fallback a fonctionné parfaitement.
+
+---
+
+### 2026-02-03 — « Credentials not configured » en prod malgré les variables Railway
+
+**What broke**: En production, l'app affichait « Supabase credentials not configured » et « Failed to fetch » à la soumission du formulaire, alors que REACT_APP_SUPABASE_URL et REACT_APP_SUPABASE_ANON_KEY étaient bien configurées dans Railway (onglet Variables).
+
+**Why**: Les variables REACT_APP_* sont injectées **au moment du build** (Create React App / craco), pas au runtime. Les variables avaient été ajoutées après le dernier déploiement ; le build actuel en prod avait donc été généré **sans** ces variables (undefined dans le bundle).
+
+**What you learned**: Après ajout ou modification de variables REACT_APP_* dans Railway, il faut **redéployer** (bouton Deploy) pour relancer un build avec les nouvelles valeurs. Un simple redémarrage du service ne suffit pas. Documenté dans docs/deployment-railway-env.md (section Dépannage).
+
+**Emotional state**: Légère confusion (« j'ai bien mis les variables ») puis soulagement une fois le mécanisme build-time compris.
 
 ---
 
@@ -343,6 +382,14 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 **If you stopped now, what would you regret?**: Ne pas avoir testé le questionnaire avec de vrais utilisateurs pour valider ces améliorations.
 **One word**: Affiné
 
+### 2026-02-03 — Pulse Check #5
+
+**Energy level**: 8/10
+**Current doubt**: L'assistant OpenAI va-t-il bien renvoyer email_user et email_sales (format body_markdown + subject) pour que Supabase les stocke?
+**Current satisfaction**: Payload complet vers OpenAI documenté et visible en debug ; schéma Supabase aligné avec l'app ; dépannage Railway documenté.
+**If you stopped now, what would you regret?**: Ne pas avoir validé en prod un flux complet avec email_user/email_sales non null.
+**One word**: Aligné
+
 ---
 
 ## Insights Vault
@@ -371,6 +418,10 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 **2026-02-02**: Les modifications de contenu à grande échelle (15 questions × 3-4 options) bénéficient d'une approche systématique avec suivi (TodoWrite) - sinon on oublie des éléments.
 
+**2026-02-03**: Les variables REACT_APP_* (CRA/craco) sont figées au build. En prod, toute modification de ces variables exige un **redéploiement** (nouveau build), pas seulement un redémarrage.
+
+**2026-02-03**: Le panneau debug doit afficher le payload **réel** envoyé aux APIs (pas un résumé), sinon on croit à tort que peu de données sont envoyées (ex. OpenAI).
+
 ---
 
 ## Artifact Links
@@ -383,6 +434,8 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 | 2026-01-27 | Screenshot | /tmp/results_preview.png | Écran résultats IA |
 | 2026-01-27 | Screenshot | /tmp/simplified_form.png | Formulaire simplifié |
 | 2026-01-28 | Config | /app/railway.json | Configuration Railway |
+| 2026-02-03 | Doc | docs/openai-analyze-and-supabase-flow.md | Format API analyze, flux Supabase |
+| 2026-02-03 | SQL | docs/supabase-schema-update.sql | Schéma Supabase (form_submissions, email_outputs) |
 
 ---
 

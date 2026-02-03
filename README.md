@@ -115,6 +115,11 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 ├── backend/
 │   ├── server.py           # FastAPI app
 │   └── requirements.txt
+├── docs/
+│   ├── deployment-railway-env.md   # Variables Railway, dépannage
+│   ├── openai-analyze-and-supabase-flow.md  # Format API analyze, flux Supabase
+│   ├── supabase-schema-update.sql  # Script SQL schéma Supabase (tables + colonnes)
+│   └── debug-mode-usage.md
 ├── memory/
 │   └── PRD.md              # Documentation technique
 ├── CHANGELOG.md            # Historique des versions
@@ -143,10 +148,12 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 
 ## Notes
 - Les données utilisateurs sont stockées exclusivement dans Supabase (Europe) pour conformité nLPD
-- L'appel OpenAI se fait côté client (à migrer vers Edge Function pour production)
+- L'appel OpenAI transite par le backend (proxy `/api/analyze`) : le frontend envoie toutes les réponses (answers + answers_detailed), l'assistant renvoie teaser + email_user + email_sales ; ces 3 sorties sont affichées puis stockées dans Supabase (form_submissions + email_outputs)
+- Schéma Supabase : exécuter [docs/supabase-schema-update.sql](docs/supabase-schema-update.sql) dans le SQL Editor pour créer ou mettre à jour les tables (form_submissions, email_outputs). Voir [docs/openai-analyze-and-supabase-flow.md](docs/openai-analyze-and-supabase-flow.md) pour le format des requêtes/réponses
 - Le formulaire est entièrement en français
 - Timeout OpenAI de 45 secondes avec fallback local
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
+- Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` (toutes les réponses)
 
 ---
 

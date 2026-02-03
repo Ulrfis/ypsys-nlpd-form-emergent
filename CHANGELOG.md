@@ -14,6 +14,23 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ---
 
+## [0.6.0] - 2026-02-03
+
+### Ajouté
+- Envoi à OpenAI de **toutes** les réponses du questionnaire : `answers` (q1..q15) + `answers_detailed` (question + réponse par item) pour une analyse détaillée par l'assistant
+- Documentation [docs/openai-analyze-and-supabase-flow.md](docs/openai-analyze-and-supabase-flow.md) : format requête/réponse API analyze, flux vers Supabase (teaser, email_user, email_sales)
+- Script SQL [docs/supabase-schema-update.sql](docs/supabase-schema-update.sql) : création/mise à jour des tables Supabase (form_submissions, email_outputs) pour recevoir toutes les réponses et les 3 sorties de l'assistant (teaser, rapport prospect, contexte commerciaux)
+- Section dépannage dans [docs/deployment-railway-env.md](docs/deployment-railway-env.md) : « Credentials not configured » en prod → appliquer les variables puis **redéployer** (build-time pour REACT_APP_*)
+
+### Modifié
+- Panneau debug (mode `?debug=true`) : affichage du **payload complet** envoyé à `/api/analyze` (answers + answers_detailed) au lieu d'un simple résumé
+- Backend : modèle `AnalyzePayload` accepte un champ optionnel `answers_detailed` (liste question_id, question, answer) et transmet l'intégralité du payload à OpenAI
+
+### Amélioré
+- L'assistant OpenAI reçoit désormais le contexte explicite de chaque question et réponse pour produire teaser, email_user et email_sales détaillés ; les deux emails sont stockés dans `email_outputs` après capture du lead
+
+---
+
 ## [0.5.0] - 2026-02-02
 
 ### Modifié
