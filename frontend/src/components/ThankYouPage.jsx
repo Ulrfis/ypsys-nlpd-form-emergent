@@ -38,51 +38,6 @@ export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation 
             </p>
           </div>
 
-          {/* Top 3 Priorities - compact */}
-          {priorities && priorities.length > 0 && (
-            <Card className="border-2 border-border shadow-md mb-4 sm:mb-8">
-              <CardHeader className="p-4 sm:p-6">
-                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                  <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                  Vos 3 priorités
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                <div className="space-y-3 sm:space-y-4">
-                  {priorities.map((priority, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={cn(
-                        "flex items-start gap-4 p-4 rounded-lg border",
-                        priority.feedback.type === 'danger' && "bg-danger/5 border-danger/20",
-                        priority.feedback.type === 'warning' && "bg-warning/5 border-warning/20"
-                      )}
-                    >
-                      <div className={cn(
-                        "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold",
-                        priority.feedback.type === 'danger' && "bg-danger/10 text-danger",
-                        priority.feedback.type === 'warning' && "bg-warning/10 text-warning"
-                      )}>
-                        {index + 1}
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground mb-1">
-                          {priority.question}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Section: {priority.section}
-                        </p>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Email Confirmation - compact */}
           <Card className="border-2 border-primary/20 bg-primary/5 mb-4 sm:mb-8">
             <CardContent className="p-4 sm:p-6">
