@@ -313,11 +313,23 @@ async def analyze(request: AnalyzeRequest):
                 "email_sales": None,
             }
 
+        email_user = response.get("email_user")
+        email_sales = response.get("email_sales")
+        if not email_user or not email_sales:
+            logger.warning(
+                "OpenAI response missing email_user and/or email_sales. Keys in response: %s. "
+                "email_user type=%s, email_sales type=%s. Raw text length=%d",
+                list(response.keys()),
+                type(email_user).__name__ if email_user is not None else "None",
+                type(email_sales).__name__ if email_sales is not None else "None",
+                len(text),
+            )
+
         return {
             "teaser": response.get("teaser") or response.get("summary") or _fallback_response(payload_dict)["teaser"],
             "lead_temperature": response.get("lead_temperature") or _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
-            "email_user": response.get("email_user"),
-            "email_sales": response.get("email_sales"),
+            "email_user": email_user,
+            "email_sales": email_sales,
         }
     except HTTPException:
         raise
