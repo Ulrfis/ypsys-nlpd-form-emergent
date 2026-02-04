@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-02-03 (retrait PostHog et bandeau cookies)
+**Last Updated**: 2026-02-04 (calendrier TidyCal, disclaimer, ajustements landing page)
 
 ---
 
@@ -315,6 +315,26 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 - **App.js** : plus de `CookieConsentProvider`, `CookieBanner`, `PostHogLoader`.
 - **Politique de confidentialité** : section Destinataires sans mention de PostHog ni de cookies statistiques.
 - **Documentation** : README, CHANGELOG (v0.8.0), STORY et [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) alignés (périmètre sans PostHog, pas de cookies).
+
+**Time**: ~30 min
+
+---
+
+### 2026-02-04 — Ajustements landing page, calendrier TidyCal et disclaimer 🔷
+
+**Intent**: Améliorer la landing page (UX), migrer vers le calendrier TidyCal de Lionel Dumas, ajouter un disclaimer légal, et affiner le contenu du questionnaire.
+
+**Tool**: Cursor
+
+**Outcome**:
+- **Landing page** : bloc d'avertissement ("Elles découvrent leurs failles trop tard...") déplacé au-dessus du bouton CTA pour un meilleur flow narratif ; line-height du sous-titre ajusté (`leading-relaxed` → `leading-snug`)
+- **Calendrier de réservation** : migration de Outlook Book With Me vers TidyCal (https://tidycal.com/ldumas?embed=1) dans `lib/booking.js`
+- **Page de résultats (ThankYouPage)** :
+  - Terminologie : "expert nLPD" → "consultant nLPD", "Nos experts sont disponibles" → "Notre équipe est disponible"
+  - Ajout d'un disclaimer légal en bas de page : "YPSYS ne s'engage en aucun cas sur l'exhaustivité ou l'exactitude des résultats..."
+- **Q8 questionnaire** : réponse "En Europe" enrichie avec mention FINMA pour le secteur financier et le stockage exclusif en Suisse pour certaines données
+
+**Friction**: Aucune — modifications de contenu et de style simples.
 
 **Time**: ~30 min
 

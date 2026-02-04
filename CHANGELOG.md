@@ -8,9 +8,21 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ### À venir
 - Intégration Dreamlit pour envoi automatique d'emails
-- Application calendrier pour réservation de consultations
 - Migration appel OpenAI vers Supabase Edge Function
 - Dashboard admin pour visualiser les leads
+
+---
+
+## [0.9.0] - 2026-02-04
+
+### Ajouté
+- **Disclaimer légal** : mention en bas de la page de résultats indiquant que YPSYS ne s'engage pas sur l'exhaustivité/exactitude des résultats
+- **Q8 nLPD** : précision FINMA pour le secteur financier concernant le stockage en Europe
+
+### Modifié
+- **Calendrier de réservation** : migration de Outlook Book With Me vers TidyCal (Lionel Dumas) avec embed intégré
+- **Page d'accueil** : bloc d'avertissement déplacé au-dessus du bouton CTA ; line-height ajusté sur le sous-titre
+- **Terminologie** : "expert nLPD" → "consultant nLPD", "Nos experts sont disponibles" → "Notre équipe est disponible"
 
 ---
 

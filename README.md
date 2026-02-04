@@ -19,7 +19,7 @@ Formulaire interactif d'auto-diagnostic de conformité nLPD pour les cabinets m�
 
 ## Source of Truth
 - **Brief/PRD Notion**: [PRD original fourni par le client]
-- **Last Sync**: 2026-02-03
+- **Last Sync**: 2026-02-04
 
 ---
 
@@ -158,6 +158,7 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - Le formulaire est entièrement en français
 - Timeout OpenAI de 45 secondes avec fallback local
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
+- Page de résultats : intégration calendrier TidyCal (Lionel Dumas), disclaimer légal, terminologie "consultant" au lieu de "expert"
 - Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` ; les logs sont sanitisés (données personnelles remplacées par `[REDACTED]`) pour conformité RGPD/nLPD
 - **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, API protégée par `X-API-Key`, logs sanitisés). Aucun cookie ni outil d’analytics (PostHog retiré) sur le formulaire.
 
