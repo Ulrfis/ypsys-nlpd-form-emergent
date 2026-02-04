@@ -66,7 +66,7 @@ export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation 
                   Réservez votre consultation gratuite
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base">
-                  Discutez de vos résultats avec un expert nLPD et obtenez des conseils personnalisés
+                  Discutez de vos résultats avec un consultant nLPD et obtenez des conseils personnalisés
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -101,7 +101,7 @@ export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation 
                 </div>
                 <div className="mt-6 pt-6 border-t border-border">
                   <p className="text-sm text-center text-muted-foreground">
-                    <strong>Nos experts sont disponibles</strong> pour répondre à vos questions
+                    <strong>Notre équipe est disponible</strong> pour répondre à vos questions
                     et vous accompagner dans votre mise en conformité nLPD.
                   </p>
                 </div>
@@ -130,6 +130,13 @@ export const ThankYouPage = ({ score, priorities, userEmail, onBookConsultation 
             </Button>
             <p className="text-xs sm:text-sm text-muted-foreground mt-3 sm:mt-4">
               30 minutes • Sans engagement • Experts certifiés
+            </p>
+          </div>
+
+          {/* Disclaimer */}
+          <div className="mt-8 sm:mt-12 pt-6 border-t border-border/50">
+            <p className="text-xs text-muted-foreground/70 text-center max-w-2xl mx-auto">
+              YPSYS ne s'engage en aucun cas sur l'exhaustivité ou l'exactitude des résultats fournis par cette application, qui reste un outil d'aide à la conformité nLPD. L'utilisateur final conserve l'entière responsabilité de la vérification et du respect de la réglementation en vigueur.
             </p>
           </div>
         </motion.div>

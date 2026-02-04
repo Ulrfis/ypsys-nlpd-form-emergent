@@ -334,7 +334,7 @@ export const questions = [
         label: 'En Europe',
         score: 1,
         feedback: { type: 'warning', message: 'Acceptable' },
-        explanation: 'Légalement acceptable sous les règles nLPD.',
+        explanation: 'Légalement acceptable sous les règles nLPD. Pour le secteur financier, la FINMA impose des exigences strictes pour la gestion des données sensibles en Europe. Et certaines données peuvent nécessiter un stockage exclusif en Suisse.',
       },
       {
         value: 'switzerland',
