@@ -20,7 +20,7 @@ export const LandingPage = ({ onStart }) => {
             <img
               src="/logo-ypsys.png"
               alt="Ypsys - time for real performance"
-              className="h-12 sm:h-16 md:h-20 w-auto"
+              className="h-14 sm:h-[74px] md:h-[92px] w-auto"
             />
           </div>
 
@@ -32,7 +32,7 @@ export const LandingPage = ({ onStart }) => {
           </h1>
 
           {/* Subheadline */}
-          <p className="text-sm sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 md:mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 md:mb-10 max-w-2xl mx-auto leading-snug">
             Depuis septembre 2023, la nouvelle Loi fédérale sur la protection des données 
             renforce les obligations de tous les cabinets médicaux, laboratoires et fiduciaires en Suisse.
           </p>
@@ -52,32 +52,11 @@ export const LandingPage = ({ onStart }) => {
             </p>
           </motion.div>
 
-          {/* CTA Button - toujours visible sans scroll */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-4 sm:mb-6 md:mb-10"
-          >
-            <Button 
-              variant="premium" 
-              size="xl" 
-              onClick={onStart}
-              className="group w-full max-w-md mx-auto px-4"
-            >
-              Commencer l&apos;évaluation
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1 shrink-0" />
-            </Button>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-4">
-              5 minutes • 15 questions • Résultats personnalisés
-            </p>
-          </motion.div>
-
           {/* Warning Message */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
             className="bg-card border border-border rounded-xl p-3 sm:p-4 md:p-6 mb-4 sm:mb-6 md:mb-10 max-w-2xl mx-auto"
           >
             <div className="flex items-start gap-3">
@@ -92,6 +71,27 @@ export const LandingPage = ({ onStart }) => {
                 </p>
               </div>
             </div>
+          </motion.div>
+
+          {/* CTA Button - toujours visible sans scroll */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="mb-4 sm:mb-6 md:mb-10"
+          >
+            <Button 
+              variant="premium" 
+              size="xl" 
+              onClick={onStart}
+              className="group w-full max-w-md mx-auto px-4"
+            >
+              Commencer l&apos;évaluation
+              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:translate-x-1 shrink-0" />
+            </Button>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2 sm:mt-4">
+              5 minutes • 15 questions • Résultats personnalisés
+            </p>
           </motion.div>
         </motion.div>
 
