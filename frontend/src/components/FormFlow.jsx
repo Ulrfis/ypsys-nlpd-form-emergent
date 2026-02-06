@@ -281,7 +281,7 @@ export const FormFlow = () => {
               </div>
             </div>
             {/* Barre de navigation fixe en bas (comme une barre de menu) */}
-            <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm sticky bottom-0">
+            <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm sticky bottom-0 safe-area-bottom" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
               <div className="container mx-auto px-4 py-3 max-w-3xl">
                 <div className="flex items-center justify-between gap-2">
                   <Button

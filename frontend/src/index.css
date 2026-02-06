@@ -29,6 +29,13 @@ html, body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Safe area support for notched devices and Android navigation */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .safe-area-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
 code {
     font-family:
         source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
