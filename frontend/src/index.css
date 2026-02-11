@@ -199,8 +199,17 @@ code {
     }
 }
 
-/* Custom utility classes */
+/* Dynamic viewport height for mobile (address bar, nav bar) - fallback vh for older browsers */
 @layer utilities {
+    .h-dynamic-screen {
+        height: 100vh;
+        height: 100dvh;
+    }
+    .min-h-dynamic-screen {
+        min-height: 100vh;
+        min-height: 100dvh;
+    }
+    
     .font-display {
         font-family: 'Playfair Display', serif;
     }

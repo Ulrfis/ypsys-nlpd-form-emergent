@@ -258,7 +258,7 @@ export const FormFlow = () => {
         )}
 
         {currentStep === STEPS.QUESTIONS && currentQuestion && (
-          <div key="questions" className="h-screen flex flex-col w-full max-w-[100vw] overflow-x-hidden">
+          <div key="questions" className="h-dynamic-screen flex flex-col w-full max-w-[100vw] overflow-x-hidden">
             <ProgressBar 
               currentQuestion={currentQuestionIndex + 1}
               totalQuestions={questions.length}
