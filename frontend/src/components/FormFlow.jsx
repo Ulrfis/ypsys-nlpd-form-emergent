@@ -9,6 +9,7 @@ import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
 import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
+import { FinalThankYouPage } from '@/components/FinalThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
@@ -24,6 +25,7 @@ const STEPS = {
   ANALYZING: 'analyzing',
   RESULTS_PREVIEW: 'results_preview',
   LEAD_CAPTURE: 'lead_capture',
+  RESULTS_FINAL: 'results_final',
   THANK_YOU: 'thank_you',
 };
 
@@ -35,7 +37,10 @@ export const FormFlow = () => {
   const [answers, setAnswers] = useState({});
   const [userData, setUserData] = useState(null);
   const [score, setScore] = useState(null);
+  const [score100, setScore100] = useState(null);
+  const [severityBand, setSeverityBand] = useState('vigilance');
   const [priorities, setPriorities] = useState([]);
+  const [topIssues, setTopIssues] = useState([]);
   const [teaser, setTeaser] = useState('');
   const [openaiResponse, setOpenaiResponse] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,8 +131,10 @@ export const FormFlow = () => {
     // Calculate score
     const calculatedScore = calculateScore(answers);
     const topPriorities = getTopPriorities(answers);
+    const localScore100 = Math.round(calculatedScore.normalized * 10);
     
     setScore(calculatedScore);
+    setScore100(localScore100);
     setPriorities(topPriorities);
 
     // Build payload for OpenAI: all answers + detailed (question + answer) so the assistant can analyze in detail
@@ -164,6 +171,22 @@ export const FormFlow = () => {
       // Store response and teaser
       setOpenaiResponse(response);
       setTeaser(response.teaser);
+      const normalizedTopIssues = Array.isArray(response.top_issues) && response.top_issues.length
+        ? response.top_issues.slice(0, 3).map((item) => String(item))
+        : topPriorities.map((p) => p.question).slice(0, 3);
+      const resolvedScore100 = Number.isFinite(response.score_100)
+        ? Math.min(Math.max(Math.round(response.score_100), 0), 100)
+        : localScore100;
+      const resolvedBand = typeof response.severity_band === 'string'
+        ? response.severity_band
+        : resolvedScore100 < 40
+          ? 'critical'
+          : resolvedScore100 < 80
+            ? 'vigilance'
+            : 'good';
+      setScore100(resolvedScore100);
+      setSeverityBand(resolvedBand);
+      setTopIssues(normalizedTopIssues);
 
       // Small delay to show completion state
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -183,7 +206,18 @@ export const FormFlow = () => {
       } Recevez votre rapport complet pour découvrir vos priorités d'action.`;
       
       setTeaser(fallbackTeaser);
-      setOpenaiResponse({ teaser: fallbackTeaser, lead_temperature: 'WARM' });
+      const fallbackTopIssues = topPriorities.map((p) => p.question).slice(0, 3);
+      const fallbackBand = localScore100 < 40 ? 'critical' : localScore100 < 80 ? 'vigilance' : 'good';
+      setTopIssues(fallbackTopIssues);
+      setSeverityBand(fallbackBand);
+      setScore100(localScore100);
+      setOpenaiResponse({
+        teaser: fallbackTeaser,
+        lead_temperature: 'WARM',
+        score_100: localScore100,
+        severity_band: fallbackBand,
+        top_issues: fallbackTopIssues,
+      });
       setAnalysisStatus('complete');
       
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -227,11 +261,11 @@ export const FormFlow = () => {
       await saveSubmission(payload, openaiResponse);
       console.log('Submission saved to Supabase');
       
-      setCurrentStep(STEPS.THANK_YOU);
+      setCurrentStep(STEPS.RESULTS_FINAL);
     } catch (error) {
       console.error('Error saving submission:', error);
       // Still go to thank you page even if save fails
-      setCurrentStep(STEPS.THANK_YOU);
+      setCurrentStep(STEPS.RESULTS_FINAL);
     } finally {
       setIsSubmitting(false);
     }
@@ -334,7 +368,6 @@ export const FormFlow = () => {
         {currentStep === STEPS.RESULTS_PREVIEW && score && (
           <ResultsPreview
             key="results-preview"
-            score={score}
             teaser={teaser}
             onRequestReport={handleRequestReport}
           />
@@ -352,12 +385,22 @@ export const FormFlow = () => {
           </div>
         )}
 
-        {currentStep === STEPS.THANK_YOU && score && (
+        {currentStep === STEPS.RESULTS_FINAL && score && (
           <ThankYouPage
-            key="thank-you"
-            score={score}
-            priorities={priorities}
+            key="results-final"
+            score100={score100 ?? Math.round(score.normalized * 10)}
+            severityBand={severityBand}
+            topIssues={topIssues.length ? topIssues : priorities.map((p) => p.question).slice(0, 3)}
             teaser={teaser}
+            userEmail={userData?.email}
+            onBookConsultation={handleBookConsultation}
+            onContinue={() => setCurrentStep(STEPS.THANK_YOU)}
+          />
+        )}
+
+        {currentStep === STEPS.THANK_YOU && (
+          <FinalThankYouPage
+            key="thank-you"
             userEmail={userData?.email}
             onBookConsultation={handleBookConsultation}
           />

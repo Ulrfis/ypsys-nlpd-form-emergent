@@ -253,6 +253,29 @@ def _classify_lead(risk_level: str) -> str:
     return mapping.get(risk_level, "WARM")
 
 
+def _score_100_from_payload(payload: dict) -> int:
+    score = payload.get("score", {}) if isinstance(payload, dict) else {}
+    normalized = score.get("normalized")
+    if isinstance(normalized, (int, float)):
+        return max(0, min(100, int(round(float(normalized) * 10))))
+    return 50
+
+
+def _severity_band_from_score(score_100: int) -> str:
+    if score_100 < 40:
+        return "critical"
+    if score_100 < 80:
+        return "vigilance"
+    return "good"
+
+
+def _normalize_top_issues(candidate: Any) -> List[str]:
+    if not isinstance(candidate, list):
+        return []
+    cleaned = [str(item).strip() for item in candidate if str(item).strip()]
+    return cleaned[:3]
+
+
 def _fallback_response(payload: dict) -> dict:
     user = payload.get("user", {})
     score = payload.get("score", {})
@@ -265,7 +288,11 @@ def _fallback_response(payload: dict) -> dict:
         "orange": f"{first_name}, votre organisation {company} obtient un score de {normalized}/10...",
         "red": f"Attention {first_name}! Votre organisation {company} présente un score de {normalized}/10...",
     }
+    score_100 = _score_100_from_payload(payload)
     return {
+        "score_100": score_100,
+        "severity_band": _severity_band_from_score(score_100),
+        "top_issues": [],
         "teaser": teasers.get(level, teasers["orange"]),
         "lead_temperature": _classify_lead(level),
         "email_user": None,
@@ -330,6 +357,9 @@ async def analyze(request: AnalyzeRequest):
                 e, len(text), text[:400] if text else "",
             )
             return {
+                "score_100": _score_100_from_payload(payload_dict),
+                "severity_band": _severity_band_from_score(_score_100_from_payload(payload_dict)),
+                "top_issues": [],
                 "teaser": text[:800],
                 "lead_temperature": _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
                 "email_user": None,
@@ -373,7 +403,18 @@ async def analyze(request: AnalyzeRequest):
                 text[:500] if text else "",
             )
 
+        resolved_score_100 = response.get("score_100")
+        if not isinstance(resolved_score_100, (int, float)):
+            resolved_score_100 = _score_100_from_payload(payload_dict)
+        resolved_score_100 = max(0, min(100, int(round(float(resolved_score_100)))))
+        resolved_band = response.get("severity_band")
+        if resolved_band not in ("critical", "vigilance", "good"):
+            resolved_band = _severity_band_from_score(resolved_score_100)
+
         return {
+            "score_100": resolved_score_100,
+            "severity_band": resolved_band,
+            "top_issues": _normalize_top_issues(response.get("top_issues")),
             "teaser": response.get("teaser") or response.get("summary") or _fallback_response(payload_dict)["teaser"],
             "lead_temperature": response.get("lead_temperature") or _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
             "email_user": email_user,

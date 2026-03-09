@@ -48,6 +48,30 @@ function withTimeout(promise, timeoutMs, errorMessage) {
   ]);
 }
 
+function normalizeScore100(payload, candidate) {
+  if (Number.isFinite(candidate)) return Math.min(Math.max(Math.round(candidate), 0), 100);
+  const normalized = payload?.score?.normalized;
+  if (Number.isFinite(normalized)) return Math.min(Math.max(Math.round(normalized * 10), 0), 100);
+  return 50;
+}
+
+function normalizeSeverityBand(score100, candidate) {
+  if (candidate === 'critical' || candidate === 'vigilance' || candidate === 'good') {
+    return candidate;
+  }
+  if (score100 < 40) return 'critical';
+  if (score100 < 80) return 'vigilance';
+  return 'good';
+}
+
+function normalizeTopIssues(candidate) {
+  if (!Array.isArray(candidate)) return [];
+  return candidate
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 3);
+}
+
 /**
  * Generate analysis via backend proxy (avoids CORS and exposes API key only server-side)
  */
@@ -112,6 +136,12 @@ async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
     onStatusUpdate('complete', 'Analyse terminée!');
 
     return {
+      score_100: normalizeScore100(payload, data?.score_100),
+      severity_band: normalizeSeverityBand(
+        normalizeScore100(payload, data?.score_100),
+        data?.severity_band
+      ),
+      top_issues: normalizeTopIssues(data?.top_issues),
       teaser: data.teaser || generateDefaultTeaser(payload),
       lead_temperature: data.lead_temperature || classifyLead(payload.score?.level),
       email_user: data.email_user ?? null,
@@ -358,6 +388,12 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
       onStatusUpdate('complete', 'Analyse terminée!');
 
       return {
+        score_100: normalizeScore100(payload, response?.score_100),
+        severity_band: normalizeSeverityBand(
+          normalizeScore100(payload, response?.score_100),
+          response?.severity_band
+        ),
+        top_issues: normalizeTopIssues(response?.top_issues),
         teaser: response.teaser || response.summary || generateDefaultTeaser(payload),
         lead_temperature: response.lead_temperature || classifyLead(payload.score.level),
         email_user: response.email_user || null,
@@ -394,6 +430,9 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
       onStatusUpdate('complete', 'Analyse terminée!');
 
       return {
+        score_100: normalizeScore100(payload),
+        severity_band: normalizeSeverityBand(normalizeScore100(payload)),
+        top_issues: [],
         teaser: responseText.substring(0, 800),
         lead_temperature: classifyLead(payload.score.level),
         email_user: null,
@@ -440,6 +479,9 @@ function generateFallbackResponse(payload) {
   };
   
   return {
+    score_100: normalizeScore100(payload),
+    severity_band: normalizeSeverityBand(normalizeScore100(payload)),
+    top_issues: [],
     teaser: teasers[score.level] || teasers.orange,
     lead_temperature: classifyLead(score.level),
     email_user: null,

@@ -2,65 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import ScoreGauge from './ScoreGauge';
 import {
   Sparkles,
-  AlertTriangle,
   CheckCircle,
-  XCircle,
-  Mail,
   ArrowRight,
-  FileText,
-  Target,
-  Users
+  FileText
 } from 'lucide-react';
 
-// Function to generate personalized score messages
-const getScoreMessage = (score, firstName = '') => {
-  const percentage = Math.round(score.normalized * 10);
-  const name = firstName ? ` ${firstName}` : '';
-
-  if (percentage >= 70) {
-    return `Bravo${name}! Votre organisation obtient un score de ${percentage}%, ce qui indique une bonne maîtrise des aspects fondamentaux de la protection des données. Toutefois, quelques améliorations peuvent encore être apportées pour atteindre une conformité optimale.`;
-  } else if (percentage >= 31) {
-    return `Votre organisation obtient un score de ${percentage}%. Des lacunes significatives ont été identifiées dans votre dispositif de conformité nLPD. Des mesures correctives prioritaires sont nécessaires pour réduire les risques juridiques et protéger vos données sensibles.`;
-  } else {
-    return `Attention${name}! Votre organisation présente un score de ${percentage}%, révélant des failles critiques dans votre conformité nLPD. Sans action rapide, vous vous exposez à des sanctions pouvant atteindre CHF 250'000, ainsi qu'à des risques majeurs pour vos données et votre réputation.`;
-  }
-};
-
-const scoreConfig = {
-  green: {
-    color: 'success',
-    icon: CheckCircle,
-    title: 'Bonne conformité',
-    bgColor: 'bg-success/10',
-    borderColor: 'border-success/30',
-    textColor: 'text-success',
-  },
-  orange: {
-    color: 'warning',
-    icon: AlertTriangle,
-    title: 'Vigilance requise',
-    bgColor: 'bg-warning/10',
-    borderColor: 'border-warning/30',
-    textColor: 'text-warning',
-  },
-  red: {
-    color: 'danger',
-    icon: XCircle,
-    title: 'Attention requise',
-    bgColor: 'bg-danger/10',
-    borderColor: 'border-danger/30',
-    textColor: 'text-danger',
-  },
-};
-
-export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' }) => {
-  const config = scoreConfig[score.riskLevel] || scoreConfig.orange;
-  const ScoreIcon = config.icon;
-
+export const ResultsPreview = ({ teaser, onRequestReport }) => {
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -81,63 +30,43 @@ export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' 
               <Sparkles className="w-7 h-7 sm:w-10 sm:h-10 text-primary-foreground" />
             </motion.div>
             <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-2 sm:mb-3">
-              Votre analyse est prête !
+              Votre analyse est terminée
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Voici un aperçu de votre diagnostic nLPD
-            </p>
+            {teaser ? (
+              <p className="text-sm sm:text-base text-muted-foreground">{teaser}</p>
+            ) : (
+              <p className="text-sm sm:text-base text-muted-foreground">
+                Nous avons évalué 15 critères techniques de conformité nLPD.
+              </p>
+            )}
           </div>
 
-          {/* Score Gauge - plus petit sur mobile */}
-          <div className="mb-4 sm:mb-6 flex justify-center">
-            <ScoreGauge score={score.normalized * 10} size={180} animated={true} />
-          </div>
-
-          {/* Risk Level Card - compact */}
-          <Card className={cn(
-            "border-2 mb-4 sm:mb-6",
-            config.borderColor,
-            config.bgColor
-          )}>
+          <Card className="border-2 border-primary/20 bg-card mb-4 sm:mb-6">
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-start gap-3 sm:gap-4">
-                <div className={cn(
-                  "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center flex-shrink-0",
-                  config.bgColor
-                )}>
-                  <ScoreIcon className={cn("w-4 h-4 sm:w-5 sm:h-5", config.textColor)} />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className={cn("text-sm sm:text-base font-semibold mb-1", config.textColor)}>
-                    {config.title}
+                  <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground">
+                    Des écarts ont été détectés dans votre infrastructure.
                   </h3>
-                  <p className="text-xs sm:text-sm text-foreground/80">
-                    {getScoreMessage(score, firstName)}
-                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Email Report Card - compact */}
           <Card className="border-2 border-border bg-card mb-4 sm:mb-8">
             <CardContent className="p-3 sm:p-5">
-              <div className="flex items-start gap-3 sm:gap-4 mb-3 sm:mb-5">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold text-foreground">
-                    Obtenez votre rapport complet par email
-                  </h3>
-                </div>
-              </div>
-              
-              <div className="space-y-2 sm:space-y-3 ml-0 sm:ml-14">
+              <h3 className="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-5">
+                Votre rapport détaillé vous indique:
+              </h3>
+              <div className="space-y-2 sm:space-y-3">
                 {[
-                  { icon: FileText, text: "Diagnostic complet de votre conformité nLPD" },
-                  { icon: Target, text: "Recommandations personnalisées et plan d'action" },
-                  { icon: Users, text: "Conseils d'experts adaptés à votre secteur" },
+                  "Votre score de conformité /100",
+                  "Les 3 failles prioritaires à corriger",
+                  "La roadmap d'action par urgence",
+                  "Les risques juridiques encourus",
                 ].map((item, index) => (
                   <motion.div
                     key={index}
@@ -147,7 +76,7 @@ export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' 
                     className="flex items-center gap-2 sm:gap-3"
                   >
                     <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success flex-shrink-0" />
-                    <span className="text-xs sm:text-sm text-foreground/80">{item.text}</span>
+                    <span className="text-xs sm:text-sm text-foreground/80">{item}</span>
                   </motion.div>
                 ))}
               </div>
@@ -165,9 +94,9 @@ export const ResultsPreview = ({ score, teaser, onRequestReport, firstName = '' 
               variant="premium"
               size="lg"
               onClick={onRequestReport}
-              className="w-full max-w-full group text-xs sm:text-base px-3 sm:px-6 min-w-0"
+              className="w-full max-w-full group text-xs sm:text-base px-3 sm:px-6 min-w-0 h-auto py-3"
             >
-              <span className="truncate">Recevoir mon rapport complet gratuit</span>
+              <span className="text-center whitespace-normal leading-tight">Voir mon résultat complet</span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
             </Button>
           </motion.div>

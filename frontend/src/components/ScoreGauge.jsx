@@ -2,14 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 
-export const ScoreGauge = ({ score, size = 200, animated = true }) => {
+export const ScoreGauge = ({ score, size = 200, animated = true, format = 'percent' }) => {
   // Score should be 0-100
   const normalizedScore = Math.min(Math.max(score, 0), 100);
 
   // Determine color based on score ranges
   const getScoreColor = (score) => {
-    if (score >= 70) return '#10b981'; // green/success
-    if (score >= 31) return '#f59e0b'; // orange/warning
+    if (score >= 80) return '#10b981'; // green/success
+    if (score >= 40) return '#f59e0b'; // orange/warning
     return '#ef4444'; // red/danger
   };
 
@@ -94,10 +94,10 @@ export const ScoreGauge = ({ score, size = 200, animated = true }) => {
             transition={{ duration: 0.6, delay: 0.8 }}
             className="text-center"
           >
-            <div className="text-5xl font-bold text-foreground">
-              {Math.round(normalizedScore)}%
+            <div className="text-3xl sm:text-5xl font-bold text-foreground leading-none">
+              {format === 'outOf100' ? `${Math.round(normalizedScore)}/100` : `${Math.round(normalizedScore)}%`}
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
+            <div className="text-xs sm:text-sm text-muted-foreground mt-1">
               Score de conformité
             </div>
           </motion.div>
