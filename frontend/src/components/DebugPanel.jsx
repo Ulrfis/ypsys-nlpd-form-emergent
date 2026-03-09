@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDebugContext } from '@/context/DebugContext';
 import { X, ChevronDown, ChevronUp, Download, Trash2, Database, Cpu, List } from 'lucide-react';
 
+const APP_RELEASE_VERSION = process.env.REACT_APP_RELEASE_VERSION || 'local-dev';
+const APP_RELEASE_DATE = process.env.REACT_APP_RELEASE_DATE || '2026-03-09';
+
 /**
  * Filter buttons for log types
  */
@@ -267,6 +270,14 @@ export const DebugPanel = () => {
 
               {/* Toolbar */}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+                <div className="mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Version live: <span className="font-mono">{APP_RELEASE_VERSION}</span>
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Dernière mise à jour: {APP_RELEASE_DATE}
+                  </p>
+                </div>
                 <FilterButtons activeFilters={activeFilters} toggleFilter={toggleFilter} />
                 <div className="flex gap-2">
                   <button

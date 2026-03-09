@@ -47,6 +47,7 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
+  const [hasReachedQuestionnaireEnd, setHasReachedQuestionnaireEnd] = useState(false);
 
   useEffect(() => {
     trackEvent('form_step_viewed', {
@@ -55,6 +56,12 @@ export const FormFlow = () => {
       answered_count: Object.keys(answers).length,
     });
   }, [currentStep, currentQuestionIndex, answers]);
+
+  useEffect(() => {
+    if (currentStep === STEPS.QUESTIONS && currentQuestionIndex === questions.length - 1) {
+      setHasReachedQuestionnaireEnd(true);
+    }
+  }, [currentStep, currentQuestionIndex]);
 
   // Initialize debug context for supabase and openai modules
   useEffect(() => {
@@ -120,6 +127,15 @@ export const FormFlow = () => {
       trackEvent('questionnaire_back_to_landing');
       setCurrentStep(STEPS.LANDING);
     }
+  }, [currentQuestionIndex]);
+
+  const handleGoToQuestion = useCallback((targetIndex) => {
+    if (targetIndex < 0 || targetIndex >= questions.length) return;
+    trackEvent('question_pagination_jump', {
+      from_question_index: currentQuestionIndex + 1,
+      to_question_index: targetIndex + 1,
+    });
+    setCurrentQuestionIndex(targetIndex);
   }, [currentQuestionIndex]);
 
   // Build the answer texts for OpenAI (flat dict q1 -> label)
@@ -356,6 +372,8 @@ export const FormFlow = () => {
 
   // Get current question and section
   const currentQuestion = questions[currentQuestionIndex];
+  const allQuestionsAnswered = questions.every((q) => Boolean(answers[q.id]));
+  const showReviewPagination = hasReachedQuestionnaireEnd && allQuestionsAnswered;
   const currentSection = currentQuestion 
     ? sections.find(s => s.id === currentQuestion.sectionId) 
     : null;
@@ -395,6 +413,33 @@ export const FormFlow = () => {
             {/* Barre de navigation fixe en bas (comme une barre de menu) */}
             <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm sticky bottom-0 safe-area-bottom" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
               <div className="container mx-auto px-4 py-3 max-w-3xl">
+                {showReviewPagination && (
+                  <div className="mb-3 rounded-lg border border-border bg-background/70 px-3 py-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGoToQuestion(currentQuestionIndex - 1)}
+                        disabled={currentQuestionIndex === 0}
+                        className="text-xs px-2 sm:px-3"
+                      >
+                        Page précédente
+                      </Button>
+                      <span className="text-xs sm:text-sm text-muted-foreground text-center">
+                        Relecture: question {currentQuestionIndex + 1}/{questions.length}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleGoToQuestion(currentQuestionIndex + 1)}
+                        disabled={currentQuestionIndex === questions.length - 1}
+                        className="text-xs px-2 sm:px-3"
+                      >
+                        Page suivante
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
