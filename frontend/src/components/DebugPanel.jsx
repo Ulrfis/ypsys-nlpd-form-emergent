@@ -2,9 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDebugContext } from '@/context/DebugContext';
 import { X, ChevronDown, ChevronUp, Download, Trash2, Database, Cpu, List } from 'lucide-react';
-
-const APP_RELEASE_VERSION = process.env.REACT_APP_RELEASE_VERSION || 'local-dev';
-const APP_RELEASE_DATE = process.env.REACT_APP_RELEASE_DATE || '2026-03-09';
+import { releaseInfo } from '@/lib/releaseInfo';
 
 /**
  * Filter buttons for log types
@@ -272,10 +270,16 @@ export const DebugPanel = () => {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                 <div className="mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3">
                   <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    Version live: <span className="font-mono">{APP_RELEASE_VERSION}</span>
+                    Version live: <span className="font-mono">{releaseInfo.appVersion}</span>
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 mt-1">
+                    Itération: <span className="font-mono">{releaseInfo.iteration}</span>
                   </p>
                   <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Dernière mise à jour: {APP_RELEASE_DATE}
+                    Build publié le: <span className="font-mono">{releaseInfo.releasedAt}</span>
+                  </p>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Changelog: <span className="font-mono">{releaseInfo.changelogRef}</span>
                   </p>
                 </div>
                 <FilterButtons activeFilters={activeFilters} toggleFilter={toggleFilter} />

@@ -87,6 +87,10 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 | **REACT_APP_SUPABASE_ANON_KEY** | `frontend/.env` uniquement | Supabase Dashboard → **Settings** → **API** → **Project API keys** → **anon public** |
 | **REACT_APP_POSTHOG_KEY** | `frontend/.env` (optionnel) | PostHog project settings → Project API key |
 | **REACT_APP_SITEBEHAVIOUR_SECRET** | `frontend/.env` (optionnel) | SiteBehaviour project secret |
+| **REACT_APP_RELEASE_VERSION** | `frontend/.env` (optionnel) | Version applicative affichée dans le Debug Panel |
+| **REACT_APP_RELEASE_ITERATION** | `frontend/.env` (optionnel) | Identifiant d'itération affiché dans le Debug Panel |
+| **REACT_APP_RELEASE_DATETIME** | `frontend/.env` (optionnel) | Date/heure de build publié affichée dans le Debug Panel |
+| **REACT_APP_RELEASE_CHANGELOG** | `frontend/.env` (optionnel) | Référence de section changelog affichée dans le Debug Panel |
 
 - Ne pas mettre les clés Supabase dans le backend : la connexion Supabase est côté frontend.
 - **Ne jamais** mettre de clé OpenAI dans le frontend (`REACT_APP_*` est inclus dans le bundle = visible par tous). Mettre **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** uniquement dans **backend/.env**.

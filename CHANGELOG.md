@@ -6,6 +6,12 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ## [Non publié]
 
+### Release debug stamp
+- **Version app** : `0.1.1`
+- **Itération** : `iter-2026-03-09-01`
+- **Build publié** : `2026-03-09 19:10`
+- **Référence panneau debug** : `CHANGELOG.md · [Non publié]`
+
 ### Ajouté
 - **Nouveau contrat OpenAI v2** : prise en charge de `score_100`, `severity_band` (`critical`/`vigilance`/`good`) et `top_issues` (3 priorités), en plus de `teaser`, `lead_temperature`, `email_user`, `email_sales`
 - **Page de confirmation finale** : nouveau composant `FinalThankYouPage` après la page de résultat détaillée
