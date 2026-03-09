@@ -47,7 +47,6 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
-  const [hasReachedQuestionnaireEnd, setHasReachedQuestionnaireEnd] = useState(false);
 
   useEffect(() => {
     trackEvent('form_step_viewed', {
@@ -56,12 +55,6 @@ export const FormFlow = () => {
       answered_count: Object.keys(answers).length,
     });
   }, [currentStep, currentQuestionIndex, answers]);
-
-  useEffect(() => {
-    if (currentStep === STEPS.QUESTIONS && currentQuestionIndex === questions.length - 1) {
-      setHasReachedQuestionnaireEnd(true);
-    }
-  }, [currentStep, currentQuestionIndex]);
 
   // Initialize debug context for supabase and openai modules
   useEffect(() => {
@@ -373,7 +366,7 @@ export const FormFlow = () => {
   // Get current question and section
   const currentQuestion = questions[currentQuestionIndex];
   const allQuestionsAnswered = questions.every((q) => Boolean(answers[q.id]));
-  const showReviewPagination = hasReachedQuestionnaireEnd && allQuestionsAnswered;
+  const showReviewPagination = allQuestionsAnswered;
   const currentSection = currentQuestion 
     ? sections.find(s => s.id === currentQuestion.sectionId) 
     : null;
