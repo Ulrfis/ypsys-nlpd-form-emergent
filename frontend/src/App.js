@@ -1,17 +1,34 @@
 import "@/index.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { DebugProvider } from "@/context/DebugContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { FormFlow } from "@/components/FormFlow";
 import { PrivacyPolicy } from "@/components/PrivacyPolicy";
 import { Toaster } from "@/components/ui/sonner";
+import { initAnalytics, trackPageView } from "@/lib/analytics";
+
+function AnalyticsRouteTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname, location.search || "");
+  }, [location.pathname, location.search]);
+
+  return null;
+}
 
 function App() {
+  useEffect(() => {
+    initAnalytics();
+  }, []);
+
   return (
     <DebugProvider>
       <ThemeProvider defaultTheme="light" storageKey="nlpd-ypsys-theme">
         <div className="App min-h-screen w-full max-w-[100vw] overflow-x-hidden">
           <BrowserRouter>
+            <AnalyticsRouteTracker />
             <Routes>
               <Route path="/politique-confidentialite" element={<PrivacyPolicy />} />
               <Route path="/" element={<FormFlow />} />

@@ -16,6 +16,7 @@ import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
 import { saveSubmission, setDebugContext } from '@/lib/supabase';
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
+import { trackEvent, identifyUser } from '@/lib/analytics';
 import { useDebugContext } from '@/context/DebugContext';
 
 // Steps in the form flow
@@ -47,6 +48,14 @@ export const FormFlow = () => {
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
 
+  useEffect(() => {
+    trackEvent('form_step_viewed', {
+      step: currentStep,
+      current_question_index: currentQuestionIndex + 1,
+      answered_count: Object.keys(answers).length,
+    });
+  }, [currentStep, currentQuestionIndex, answers]);
+
   // Initialize debug context for supabase and openai modules
   useEffect(() => {
     setDebugContext(debugContext);
@@ -64,21 +73,36 @@ export const FormFlow = () => {
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
+    trackEvent('questionnaire_started', {
+      total_questions: questions.length,
+    });
     setCurrentStep(STEPS.QUESTIONS);
     setCurrentQuestionIndex(0);
   }, []);
 
   // Handle answer selection
   const handleAnswer = useCallback((questionId, value) => {
+    const questionMeta = questions.find((q) => q.id === questionId);
+    trackEvent('question_answered', {
+      question_id: questionId,
+      section_id: questionMeta?.sectionId || null,
+      question_number: questionMeta?.number || null,
+      selected_value: value,
+      answered_count_after: Object.keys({ ...answers, [questionId]: value }).length,
+    });
     setAnswers(prev => ({
       ...prev,
       [questionId]: value,
     }));
-  }, []);
+  }, [answers]);
 
   // Navigate to next question
   const handleNext = useCallback(() => {
     if (currentQuestionIndex < questions.length - 1) {
+      trackEvent('question_navigated_next', {
+        from_question_index: currentQuestionIndex + 1,
+        to_question_index: currentQuestionIndex + 2,
+      });
       setCurrentQuestionIndex(prev => prev + 1);
     }
   }, [currentQuestionIndex]);
@@ -86,9 +110,14 @@ export const FormFlow = () => {
   // Navigate to previous question
   const handlePrevious = useCallback(() => {
     if (currentQuestionIndex > 0) {
+      trackEvent('question_navigated_previous', {
+        from_question_index: currentQuestionIndex + 1,
+        to_question_index: currentQuestionIndex,
+      });
       setCurrentQuestionIndex(prev => prev - 1);
     } else {
       // Go back to landing
+      trackEvent('questionnaire_back_to_landing');
       setCurrentStep(STEPS.LANDING);
     }
   }, [currentQuestionIndex]);
@@ -132,6 +161,11 @@ export const FormFlow = () => {
     const calculatedScore = calculateScore(answers);
     const topPriorities = getTopPriorities(answers);
     const localScore100 = Math.round(calculatedScore.normalized * 10);
+    trackEvent('questionnaire_submitted_for_analysis', {
+      answered_count: Object.keys(answers).length,
+      local_score_100: localScore100,
+      local_risk_level: calculatedScore.riskLevel,
+    });
     
     setScore(calculatedScore);
     setScore100(localScore100);
@@ -187,6 +221,12 @@ export const FormFlow = () => {
       setScore100(resolvedScore100);
       setSeverityBand(resolvedBand);
       setTopIssues(normalizedTopIssues);
+      trackEvent('analysis_completed', {
+        openai_score_100: response.score_100 ?? null,
+        resolved_score_100: resolvedScore100,
+        severity_band: resolvedBand,
+        top_issues_count: normalizedTopIssues.length,
+      });
 
       // Small delay to show completion state
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -195,6 +235,9 @@ export const FormFlow = () => {
       setCurrentStep(STEPS.RESULTS_PREVIEW);
     } catch (error) {
       console.error('Error during analysis:', error);
+      trackEvent('analysis_failed', {
+        error_message: error?.message || 'unknown_error',
+      });
       
       // Fallback teaser
       const fallbackTeaser = `Votre score de conformité est de ${calculatedScore.normalized}/10. ${
@@ -227,6 +270,7 @@ export const FormFlow = () => {
 
   // Request full report (go to lead capture)
   const handleRequestReport = useCallback(() => {
+    trackEvent('lead_capture_opened');
     setCurrentStep(STEPS.LEAD_CAPTURE);
   }, []);
 
@@ -234,6 +278,17 @@ export const FormFlow = () => {
   const handleSubmitLead = useCallback(async (formData) => {
     setIsSubmitting(true);
     setUserData(formData);
+    trackEvent('lead_form_submitted', {
+      has_first_name: Boolean(formData.firstName),
+      has_last_name: Boolean(formData.lastName),
+      has_company_name: Boolean(formData.companyName),
+      has_company_size: Boolean(formData.companySize),
+      has_industry: Boolean(formData.industry),
+      has_canton: Boolean(formData.canton),
+      consent_marketing: Boolean(formData.consentMarketing),
+      score_100: score100 ?? null,
+      severity_band: severityBand,
+    });
 
     // Build complete payload with user data (answers_detailed not needed for Supabase but kept for consistency)
     const payload = {
@@ -257,24 +312,47 @@ export const FormFlow = () => {
     };
 
     try {
+      identifyUser(formData.email, {
+        company_name: formData.companyName || null,
+        company_size: formData.companySize || null,
+        industry: formData.industry || null,
+        canton: formData.canton || null,
+      });
       // Save to Supabase with the previously generated OpenAI response
       await saveSubmission(payload, openaiResponse);
       console.log('Submission saved to Supabase');
+      trackEvent('lead_saved_to_supabase_success');
       
       setCurrentStep(STEPS.RESULTS_FINAL);
     } catch (error) {
       console.error('Error saving submission:', error);
+      trackEvent('lead_saved_to_supabase_failed', {
+        error_message: error?.message || 'unknown_error',
+      });
       // Still go to thank you page even if save fails
       setCurrentStep(STEPS.RESULTS_FINAL);
     } finally {
       setIsSubmitting(false);
     }
-  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse]);
+  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand]);
 
   // Book consultation (Outlook Book With Me)
   const handleBookConsultation = useCallback(() => {
+    trackEvent('booking_cta_clicked', {
+      from_step: currentStep,
+      score_100: score100 ?? null,
+      severity_band: severityBand,
+    });
     window.open(BOOKING_CALENDAR_URL, '_blank');
-  }, []);
+  }, [currentStep, score100, severityBand]);
+
+  const handleContinueToFinal = useCallback(() => {
+    trackEvent('result_continue_to_final_confirmation', {
+      score_100: score100 ?? null,
+      severity_band: severityBand,
+    });
+    setCurrentStep(STEPS.THANK_YOU);
+  }, [score100, severityBand]);
 
   // Get current question and section
   const currentQuestion = questions[currentQuestionIndex];
@@ -394,7 +472,7 @@ export const FormFlow = () => {
             teaser={teaser}
             userEmail={userData?.email}
             onBookConsultation={handleBookConsultation}
-            onContinue={() => setCurrentStep(STEPS.THANK_YOU)}
+            onContinue={handleContinueToFinal}
           />
         )}
 

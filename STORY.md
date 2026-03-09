@@ -370,6 +370,11 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 - **Docs ajoutées** :
   - `docs/assistant-prompt-nlpd-v2-score100.md`
   - `docs/plan-maj-scoring-nlpd.md`
+- **Tracking analytics** :
+  - PostHog intégré (`posthog-js`) avec événements de funnel (start, answers, navigation, analyse, lead submit, conversion, booking CTA)
+  - script SiteBehaviour injecté côté frontend pour heatmap / comportement session
+  - suivi des pages via route tracker (`page_view`)
+  - politique de confidentialité mise à jour pour refléter ces traitements
 
 **Friction**: concilier le nouveau contenu long (blocs éditoriaux) avec des écrans mobiles étroits sans générer de débordement ni de CTA illisibles.
 

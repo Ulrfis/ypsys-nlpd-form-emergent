@@ -85,6 +85,8 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 | **REACT_APP_BACKEND_URL** | `frontend/.env` | En local : `http://localhost:8000`. En production : URL du backend déployé (ex. `https://votre-backend.railway.app`). À définir dans les variables d'environnement du build (Railway/Vercel) lors du déploiement du frontend. |
 | **REACT_APP_SUPABASE_URL** | `frontend/.env` uniquement | Supabase Dashboard → votre projet → **Settings** → **API** → **Project URL** |
 | **REACT_APP_SUPABASE_ANON_KEY** | `frontend/.env` uniquement | Supabase Dashboard → **Settings** → **API** → **Project API keys** → **anon public** |
+| **REACT_APP_POSTHOG_KEY** | `frontend/.env` (optionnel) | PostHog project settings → Project API key |
+| **REACT_APP_SITEBEHAVIOUR_SECRET** | `frontend/.env` (optionnel) | SiteBehaviour project secret |
 
 - Ne pas mettre les clés Supabase dans le backend : la connexion Supabase est côté frontend.
 - **Ne jamais** mettre de clé OpenAI dans le frontend (`REACT_APP_*` est inclus dans le bundle = visible par tous). Mettre **OPENAI_API_KEY** et **OPENAI_ASSISTANT_ID** uniquement dans **backend/.env**.
@@ -163,7 +165,10 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
 - Nouveau flow résultats (2026-03-09) : transition sans score avant email, résultat complet après email, puis confirmation finale ; pass responsive mobile/desktop
 - Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` ; les logs sont sanitisés (données personnelles remplacées par `[REDACTED]`) pour conformité RGPD/nLPD
-- **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, API protégée par `X-API-Key`, logs sanitisés). Aucun cookie ni outil d’analytics (PostHog retiré) sur le formulaire.
+- **Analytics comportemental** : tracking PostHog (autocapture + événements métier questionnaire) et script SiteBehaviour (heatmap/session behaviour) activés pour l’optimisation UX.
+- **Région analytics** : PostHog configuré sur l’endpoint EU (`https://eu.i.posthog.com`).
+- **Consentement** : activation immédiate sans bannière cookies sur ce formulaire (décision produit actuelle).
+- **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, API protégée par `X-API-Key`, logs sanitisés).
 
 ---
 
