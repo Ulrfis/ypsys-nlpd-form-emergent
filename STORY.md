@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-02-04 (calendrier TidyCal, disclaimer, ajustements landing page)
+**Last Updated**: 2026-03-09 (nouveau flow score /100, prompt OpenAI v2, refonte responsive mobile/desktop)
 
 ---
 
@@ -337,6 +337,47 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 **Friction**: Aucune — modifications de contenu et de style simples.
 
 **Time**: ~30 min
+
+---
+
+### 2026-03-09 — Nouveau flow scoring /100, OpenAI v2 et pass responsive 🔷
+
+**Intent**: Aligner l'expérience utilisateur avec une mécanique de score /100 pilotée par OpenAI, supprimer le score avant email, afficher le résultat complet après capture, et fiabiliser le rendu desktop/smartphone.
+
+**Tool**: Cursor
+
+**Outcome**:
+- **Flow refactorisé** : `Questions -> Transition sans score -> Capture email -> Résultat complet -> Thank you final`
+- **Écran pré-email (`ResultsPreview`)** :
+  - suppression de la jauge et du score,
+  - nouveau message "Votre analyse est terminée",
+  - liste des livrables du rapport (score /100, priorités, roadmap, risques)
+- **Écran résultat (`ThankYouPage`)** :
+  - titre "VOTRE SCORE CONFORMITÉ nLPD",
+  - jauge `/100`,
+  - 3 variantes éditoriales selon seuils:
+    - `<40` (critique),
+    - `40-79` (vigilance),
+    - `80-100` (bon niveau),
+  - section dynamique des 3 priorités
+- **Contrat OpenAI v2** : support de `score_100`, `severity_band`, `top_issues` côté frontend et backend
+- **Fallback robuste** : si OpenAI ne renvoie pas les nouveaux champs, fallback local (score converti /100 + priorités locales)
+- **Responsive pass 2** :
+  - boutons CTA sans troncature (multilignes),
+  - amélioration padding/interlignage,
+  - gestion des longues adresses email,
+  - lisibilité renforcée mobile et desktop
+- **Docs ajoutées** :
+  - `docs/assistant-prompt-nlpd-v2-score100.md`
+  - `docs/plan-maj-scoring-nlpd.md`
+
+**Friction**: concilier le nouveau contenu long (blocs éditoriaux) avec des écrans mobiles étroits sans générer de débordement ni de CTA illisibles.
+
+**Resolution**: approche mobile-first avec suppression des truncates, autorisation du wrapping sur CTA, typographies adaptatives et interlignage `leading-relaxed`.
+
+**Surprise**: la clarté perçue augmente fortement quand le score est déplacé après la capture email, tout en gardant une page de transition utile et moins anxiogène.
+
+**Time**: ~2h
 
 ---
 

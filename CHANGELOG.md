@@ -6,6 +6,19 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 
 ## [Non publié]
 
+### Ajouté
+- **Nouveau contrat OpenAI v2** : prise en charge de `score_100`, `severity_band` (`critical`/`vigilance`/`good`) et `top_issues` (3 priorités), en plus de `teaser`, `lead_temperature`, `email_user`, `email_sales`
+- **Page de confirmation finale** : nouveau composant `FinalThankYouPage` après la page de résultat détaillée
+- **Documentation** : ajout de `docs/assistant-prompt-nlpd-v2-score100.md` et `docs/plan-maj-scoring-nlpd.md`
+
+### Modifié
+- **Flux post-questionnaire** : `Questions -> Transition sans score -> Capture email -> Résultat complet -> Thank you final`
+- **Écran avant email (`ResultsPreview`)** : suppression de toute notion de score ; texte orienté "analyse terminée" + livrables du rapport
+- **Écran résultat après email (`ThankYouPage`)** : refonte complète avec titre "VOTRE SCORE CONFORMITÉ nLPD", jauge `/100`, contenu conditionnel selon 3 seuils (`<40`, `40-79`, `80-100`) et bloc CTA "PRENDRE RENDEZ-VOUS - 30 MIN"
+- **Jauge (`ScoreGauge`)** : affichage `XX/100` et seuils couleurs alignés sur la nouvelle mécanique (`red <40`, `orange 40-79`, `green >=80`)
+- **Robustesse scoring** : fallback local automatique si OpenAI ne renvoie pas `score_100` / `severity_band` / `top_issues`
+- **Responsive mobile/desktop** : amélioration des CTA multilignes, typographie, interlignage, paddings et gestion des débordements (dont emails longs)
+
 ### À venir
 - Intégration Dreamlit pour envoi automatique d'emails
 - Migration appel OpenAI vers Supabase Edge Function
