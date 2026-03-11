@@ -3,6 +3,13 @@
 ## Pourquoi ce document
 Ce document explique, en mots simples, les points qui pouvaient prêter à confusion dans le parcours du formulaire, les choix validés, et les autres options possibles si vous souhaitez faire évoluer l'expérience plus tard.
 
+## Processus suivi pour décider
+1. Relecture des indications fournies et des écrans concernés.
+2. Identification des zones d'ambiguïté qui peuvent changer l'expérience client.
+3. Validation explicite des choix prioritaires.
+4. Mise en place des choix retenus.
+5. Documentation des options non retenues pour garder de la flexibilité.
+
 ## Les points qui n'étaient pas totalement clairs
 
 ### 1) Quelle version des consignes utiliser pour l'assistant IA
@@ -61,6 +68,16 @@ Conséquence:
 Conséquence:
 - meilleur contrôle de ton;
 - mais une règle supplémentaire à gérer.
+
+### Option 5 — Version plus créative et engageante (future itération)
+Exemples possibles:
+- message intermédiaire avec progression visuelle en 3 étapes (diagnostic, priorités, plan d'action);
+- texte plus motivant orienté bénéfices ("ce que vous pouvez améliorer rapidement");
+- mise en scène légère du résultat (apparition progressive des informations).
+
+Conséquence:
+- expérience plus mémorable;
+- mais besoin de tests utilisateurs pour valider la compréhension.
 
 ## Ce que cela change concrètement pour le client final
 - Le parcours reste fluide et compréhensible.

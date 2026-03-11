@@ -386,6 +386,43 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 
 ---
 
+### 2026-03-11 — Clarification client, décisions UX et alternatives futures 🔷
+
+**Intent**: Transformer les ambiguïtés de wording en décisions claires pour l'écran intermédiaire, et documenter explicitement les alternatives (dont des pistes plus créatives/engageantes) pour les prochaines itérations.
+
+**Tool**: Cursor
+
+**Processus suivi**:
+1. Identifier les zones ambiguës visibles côté utilisateur (message intermédiaire + teaser + version de consignes IA).
+2. Valider les choix métier prioritaires avec questions ciblées.
+3. Appliquer les choix dans l'interface et aligner la documentation.
+4. Documenter les alternatives gardées en réserve pour faciliter un pivot futur.
+
+**Décisions appliquées**:
+- prompt de référence = version v2 score `/100`,
+- message intermédiaire dynamique selon niveau (`critical`/`vigilance`/`good`) avec ton non anxiogène,
+- teaser IA conservé sur l'écran intermédiaire.
+
+**Alternatives conservées (non implémentées)**:
+- texte neutre identique pour tous les cas,
+- suppression complète du message intermédiaire,
+- affichage conditionnel du teaser (uniquement après validation éditoriale).
+
+**Alternatives créatives/engageantes possibles**:
+- micro-animation et iconographie distinctes par niveau (lisibilité émotionnelle, sans dramatisation),
+- mini-parcours en 3 étapes sur l'écran intermédiaire ("diagnostic", "priorités", "plan d'action"),
+- microcopy orientée bénéfices ("gain rapide", "effort estimé", "impact attendu"),
+- version "progressive reveal" du résultat (info par info pour maintenir l'attention).
+
+**Outcome**:
+- wording intermédiaire plus juste selon le niveau,
+- meilleure cohérence entre écran, emails et consignes IA,
+- cadre de décision documenté pour accélérer les prochains arbitrages produit.
+
+**Time**: ~1h
+
+---
+
 ## Pivots & Breakages
 
 ### 2026-01-27 — Clé Supabase incorrecte

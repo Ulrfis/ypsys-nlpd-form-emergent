@@ -23,11 +23,24 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 ### Modifié
 - **Flux post-questionnaire** : `Questions -> Transition sans score -> Capture email -> Résultat complet -> Thank you final`
 - **Écran avant email (`ResultsPreview`)** : suppression de toute notion de score ; texte orienté "analyse terminée" + livrables du rapport
+- **Message intermédiaire avant email** : remplacement de la phrase fixe par un message adapté au niveau (`critical` / `vigilance` / `good`) avec un ton non alarmiste
 - **Écran résultat après email (`ThankYouPage`)** : refonte complète avec titre "VOTRE SCORE CONFORMITÉ nLPD", jauge `/100`, contenu conditionnel selon 3 seuils (`<40`, `40-79`, `80-100`) et bloc CTA "PRENDRE RENDEZ-VOUS - 30 MIN"
 - **Jauge (`ScoreGauge`)** : affichage `XX/100` et seuils couleurs alignés sur la nouvelle mécanique (`red <40`, `orange 40-79`, `green >=80`)
 - **Robustesse scoring** : fallback local automatique si OpenAI ne renvoie pas `score_100` / `severity_band` / `top_issues`
 - **Responsive mobile/desktop** : amélioration des CTA multilignes, typographie, interlignage, paddings et gestion des débordements (dont emails longs)
 - **Politique de confidentialité** : mise à jour des sections données/finalités/destinataires pour refléter PostHog et SiteBehaviour
+- **Référence assistant OpenAI** : documentation alignée sur le prompt actif `docs/assistant-prompt-nlpd-v2-score100.md`
+
+### Décisions et alternatives documentées
+- **Décision validée** : conserver le teaser personnalisé sur l’écran intermédiaire quand il est disponible.
+- **Alternatives conservées pour itération future** :
+  - texte neutre unique pour tous les niveaux,
+  - suppression totale du bloc message intermédiaire,
+  - affichage du teaser uniquement après validation éditoriale.
+- **Pistes créatives/engageantes possibles** (non implémentées à ce stade) :
+  - micro-animation différente selon le niveau pour renforcer la lisibilité sans dramatiser,
+  - message d'encouragement personnalisé avec progression en 3 étapes,
+  - variante storytelling courte ("où vous en êtes / prochaine action / bénéfice attendu").
 
 ### À venir
 - Intégration Dreamlit pour envoi automatique d'emails
