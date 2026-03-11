@@ -9,7 +9,14 @@ import {
   FileText
 } from 'lucide-react';
 
-export const ResultsPreview = ({ teaser, onRequestReport }) => {
+const levelMessages = {
+  critical: 'Des actions prioritaires ont été repérées pour renforcer rapidement votre conformité.',
+  vigilance: 'Des points de vigilance ont été identifiés pour consolider votre conformité.',
+  good: 'Votre base est solide, avec quelques améliorations ciblées pour aller plus loin.',
+};
+
+export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestReport }) => {
+  const summaryMessage = levelMessages[severityBand] || levelMessages.vigilance;
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -49,7 +56,7 @@ export const ResultsPreview = ({ teaser, onRequestReport }) => {
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground">
-                    Des écarts ont été détectés dans votre infrastructure.
+                    {summaryMessage}
                   </h3>
                 </div>
               </div>
