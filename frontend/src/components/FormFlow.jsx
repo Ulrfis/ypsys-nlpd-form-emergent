@@ -485,6 +485,7 @@ export const FormFlow = () => {
           <ResultsPreview
             key="results-preview"
             teaser={teaser}
+            severityBand={severityBand}
             onRequestReport={handleRequestReport}
           />
         )}
