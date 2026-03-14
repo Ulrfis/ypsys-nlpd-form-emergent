@@ -21,11 +21,33 @@ Ces variables doivent être définies **au niveau du projet ou du service** pour
 
 Sans elles, la sauvegarde des soumissions du formulaire échoue (« Failed to fetch » / « Supabase credentials not configured »).
 
-## Variable optionnelle pour le frontend
+## Variables optionnelles pour le frontend (build)
 
 | Variable | Exemple | Rôle |
 |----------|---------|------|
 | **REACT_APP_BACKEND_URL** | `https://votre-app.up.railway.app` | URL de l’API. En production, si le frontend est servi par le **même** service Railway, l’app utilise automatiquement l’origine courante (`window.location.origin`) quand cette variable n’est pas définie. À définir seulement si le frontend est hébergé ailleurs (autre domaine). |
+
+### PostHog : ajouter la clé en local et sur Railway
+
+**En local**
+
+1. Ouvrez `frontend/.env` (ou créez-le à partir de `frontend/.env.example`).
+2. Ajoutez une ligne (sans espaces autour du `=`) :
+   ```
+   REACT_APP_POSTHOG_KEY=phc_5BmeTv70s9Ic9mSrloVyZOruK1GS9W1m2xzij4ytC3b
+   ```
+3. Redémarrez le serveur de dev (`npm run start` dans `frontend/`) pour que la variable soit lue.
+
+**Sur Railway**
+
+1. Railway Dashboard → votre projet → le service qui build le frontend.
+2. Onglet **Variables** (ou **Settings** → **Variables**).
+3. **+ New Variable** (ou **Add Variable**).
+4. Nom : `REACT_APP_POSTHOG_KEY` — Valeur : `phc_5BmeTv70s9Ic9mSrloVyZOruK1GS9W1m2xzij4ytC3b`
+5. Enregistrez (**Apply** / **Save**).
+6. **Redéployez** le service (bouton **Redeploy** ou **Deploy**) : les variables `REACT_APP_*` sont injectées au **build** ; un redéploiement est nécessaire.
+
+Sans cette variable, PostHog n'est pas initialisé et aucun événement n'est envoyé (pas d'erreur côté app).
 
 ## Variables pour le backend (runtime)
 
