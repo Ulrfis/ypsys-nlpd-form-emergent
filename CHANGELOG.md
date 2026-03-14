@@ -21,6 +21,7 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
   - intégration script SiteBehaviour (heatmap / comportement session)
 
 ### Modifié
+- **PostHog** : activation uniquement si `REACT_APP_POSTHOG_KEY` est défini (clé retirée du code ; à définir en local dans `frontend/.env` et en prod dans Railway Variables pour le tracking usages / user flows).
 - **Flux post-questionnaire** : `Questions -> Transition sans score -> Capture email -> Résultat complet -> Thank you final`
 - **Écran avant email (`ResultsPreview`)** : suppression de toute notion de score ; texte orienté "analyse terminée" + livrables du rapport
 - **Message intermédiaire avant email** : remplacement de la phrase fixe par un message adapté au niveau (`critical` / `vigilance` / `good`) avec un ton non alarmiste

@@ -1,13 +1,8 @@
 import posthog from 'posthog-js';
 
-const DEFAULT_POSTHOG_KEY = 'phc_5BmeTv70s9Ic9mSrloVyZOruK1GS9W1m2xzij4ytC3b';
-const DEFAULT_POSTHOG_HOST = 'https://eu.i.posthog.com';
-const DEFAULT_SITEBEHAVIOUR_SECRET = '9fe58556-e103-4c79-a1b1-5495fe92d011';
-
-const POSTHOG_KEY = process.env.REACT_APP_POSTHOG_KEY || DEFAULT_POSTHOG_KEY;
-// Project decision: PostHog region is fixed to EU.
-const POSTHOG_HOST = DEFAULT_POSTHOG_HOST;
-const SITEBEHAVIOUR_SECRET = process.env.REACT_APP_SITEBEHAVIOUR_SECRET || DEFAULT_SITEBEHAVIOUR_SECRET;
+const POSTHOG_KEY = process.env.REACT_APP_POSTHOG_KEY;
+const POSTHOG_HOST = process.env.REACT_APP_POSTHOG_HOST || 'https://eu.i.posthog.com';
+const SITEBEHAVIOUR_SECRET = process.env.REACT_APP_SITEBEHAVIOUR_SECRET || '9fe58556-e103-4c79-a1b1-5495fe92d011';
 
 let isInitialized = false;
 
@@ -33,9 +28,10 @@ const injectSiteBehaviourScript = () => {
 
 export const initAnalytics = () => {
   if (isInitialized || typeof window === 'undefined') return;
+  if (!POSTHOG_KEY || !POSTHOG_KEY.trim()) return;
 
   try {
-    posthog.init(POSTHOG_KEY, {
+    posthog.init(POSTHOG_KEY.trim(), {
       api_host: POSTHOG_HOST,
       capture_pageview: false,
       autocapture: true,

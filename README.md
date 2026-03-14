@@ -41,7 +41,7 @@ Créer un outil d'évaluation de conformité à la nouvelle Loi fédérale sur l
 - [x] Support mode sombre/clair
 - [x] Configuration Railway pour déploiement
 - [x] Version mobile : CTA et barre de navigation toujours visibles, questionnaire compact
-- [x] Conformité RGPD/nLPD : politique de confidentialité, API backend protégée, logs sanitisés (pas de cookies ni d’analytics sur le formulaire)
+- [x] Conformité RGPD/nLPD : politique de confidentialité, API backend protégée, logs sanitisés. Analytics PostHog (usages, user flows) si REACT_APP_POSTHOG_KEY est défini
 
 ---
 
@@ -85,7 +85,7 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 | **REACT_APP_BACKEND_URL** | `frontend/.env` | En local : `http://localhost:8000`. En production : URL du backend déployé (ex. `https://votre-backend.railway.app`). À définir dans les variables d'environnement du build (Railway/Vercel) lors du déploiement du frontend. |
 | **REACT_APP_SUPABASE_URL** | `frontend/.env` uniquement | Supabase Dashboard → votre projet → **Settings** → **API** → **Project URL** |
 | **REACT_APP_SUPABASE_ANON_KEY** | `frontend/.env` uniquement | Supabase Dashboard → **Settings** → **API** → **Project API keys** → **anon public** |
-| **REACT_APP_POSTHOG_KEY** | `frontend/.env` (optionnel) | PostHog project settings → Project API key |
+| **REACT_APP_POSTHOG_KEY** | `frontend/.env` + Railway Variables | PostHog → Project Settings → Project API key. Requis pour le tracking (usages, parcours). |
 | **REACT_APP_SITEBEHAVIOUR_SECRET** | `frontend/.env` (optionnel) | SiteBehaviour project secret |
 | **REACT_APP_RELEASE_VERSION** | `frontend/.env` (optionnel) | Version applicative affichée dans le Debug Panel |
 | **REACT_APP_RELEASE_ITERATION** | `frontend/.env` (optionnel) | Identifiant d'itération affiché dans le Debug Panel |
