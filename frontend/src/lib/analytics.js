@@ -1,4 +1,5 @@
 import posthog from 'posthog-js';
+import grain from '@/lib/grain';
 
 const POSTHOG_KEY = process.env.REACT_APP_POSTHOG_KEY;
 const POSTHOG_HOST = process.env.REACT_APP_POSTHOG_HOST || 'https://eu.i.posthog.com';
@@ -28,7 +29,13 @@ const injectSiteBehaviourScript = () => {
 
 export const initAnalytics = () => {
   if (isInitialized || typeof window === 'undefined') return;
-  if (!POSTHOG_KEY || !POSTHOG_KEY.trim()) return;
+  const hasPosthogKey = Boolean(POSTHOG_KEY && POSTHOG_KEY.trim());
+
+  if (!hasPosthogKey) {
+    console.warn('[Analytics] REACT_APP_POSTHOG_KEY is missing: PostHog disabled, Grain remains active.');
+    isInitialized = true;
+    return;
+  }
 
   try {
     posthog.init(POSTHOG_KEY.trim(), {
@@ -46,6 +53,13 @@ export const initAnalytics = () => {
 
 export const trackEvent = (eventName, properties = {}) => {
   if (!isInitialized) return;
+
+  try {
+    grain.track(eventName, properties);
+  } catch (error) {
+    console.error(`[Analytics] Grain capture failed for ${eventName}:`, error);
+  }
+
   try {
     posthog.capture(eventName, properties);
   } catch (error) {
@@ -62,6 +76,13 @@ export const trackPageView = (pathname, search = '') => {
 
 export const identifyUser = (distinctId, properties = {}) => {
   if (!isInitialized || !distinctId) return;
+
+  try {
+    grain.setUserId(distinctId);
+  } catch (error) {
+    console.error('[Analytics] Grain identify failed:', error);
+  }
+
   try {
     posthog.identify(distinctId, properties);
   } catch (error) {
