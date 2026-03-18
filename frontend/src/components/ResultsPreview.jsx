@@ -103,7 +103,7 @@ export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestRe
               onClick={onRequestReport}
               className="w-full max-w-full group text-xs sm:text-base px-3 sm:px-6 min-w-0 h-auto py-3"
             >
-              <span className="text-center whitespace-normal leading-tight">Voir mon résultat complet</span>
+              <span className="text-center whitespace-normal leading-tight">Recevoir mon résultat complet</span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
             </Button>
           </motion.div>

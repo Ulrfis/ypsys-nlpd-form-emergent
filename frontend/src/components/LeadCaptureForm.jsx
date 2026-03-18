@@ -21,7 +21,7 @@ import {
 import { swissCantons, companySizes, industries } from '@/data/questionsData';
 import { User, Building2, Mail, MapPin, Users, Briefcase, ArrowRight, Shield, ChevronDown } from 'lucide-react';
 
-export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
+export const LeadCaptureForm = ({ onSubmit, isLoading, prefilledEmail, onSendPrefilledReport }) => {
   const [formData, setFormData] = useState({
     firstName: '', // Optional - now in collapsible section
     lastName: '', // Required - primary field
@@ -88,11 +88,46 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
             Recevez votre score et vos 3 priorités
           </CardTitle>
           <CardDescription className="text-base mt-2">
-            Entrez vos coordonnées pour recevoir votre rapport personnalisé par email.
+            {prefilledEmail
+              ? 'Votre email est déjà prérempli. Envoyez directement votre rapport personnalisé.'
+              : 'Entrez vos coordonnées pour recevoir votre rapport personnalisé par email.'}
           </CardDescription>
         </CardHeader>
         
         <CardContent>
+          {prefilledEmail ? (
+            <div className="space-y-5">
+              <div className="rounded-lg border border-border bg-background/60 p-4">
+                <p className="text-sm text-muted-foreground mb-1">Rapport envoyé à :</p>
+                <p className="font-medium text-foreground break-all">{prefilledEmail}</p>
+              </div>
+
+              <Button
+                type="button"
+                variant="premium"
+                size="lg"
+                className="w-full"
+                onClick={onSendPrefilledReport}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  <>
+                    Envoyer le rapport personnalisé
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Gratuit • Sans engagement • Résultats immédiats
+              </p>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Required Fields */}
             <div className="space-y-4">
@@ -311,6 +346,7 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, score }) => {
               Gratuit • Sans engagement • Résultats immédiats
             </p>
           </form>
+          )}
         </CardContent>
       </Card>
     </motion.div>

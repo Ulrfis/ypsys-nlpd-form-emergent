@@ -57,7 +57,7 @@ const RESULT_COPY = {
   },
 };
 
-export const ThankYouPage = ({ score100, severityBand, topIssues, onBookConsultation, onContinue }) => {
+export const ThankYouPage = ({ score100, severityBand, topIssues, onBookConsultation }) => {
   const safeScore = Math.min(Math.max(Math.round(score100 ?? 0), 0), 100);
   const band = RESULT_COPY[severityBand] ? severityBand : safeScore < 40 ? 'critical' : safeScore < 80 ? 'vigilance' : 'good';
   const copy = RESULT_COPY[band];
@@ -163,21 +163,6 @@ export const ThankYouPage = ({ score100, severityBand, topIssues, onBookConsulta
               </Button>
             </CardContent>
           </Card>
-
-          <div className="text-center">
-            <h3 className="text-lg sm:text-xl font-semibold text-foreground mb-3 sm:mb-4">
-              Continuer
-            </h3>
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={onContinue}
-              className="group w-full max-w-full text-xs sm:text-base px-3 sm:px-6 min-w-0 h-auto py-3"
-            >
-              <span className="text-center whitespace-normal leading-tight">Voir la confirmation finale</span>
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </div>
 
           <div className="mt-8 sm:mt-12 pt-6 border-t border-border/50">
             <p className="text-xs text-muted-foreground/70 text-center max-w-2xl mx-auto">

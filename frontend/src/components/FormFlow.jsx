@@ -9,7 +9,6 @@ import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
 import { ResultsPreview } from '@/components/ResultsPreview';
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
-import { FinalThankYouPage } from '@/components/FinalThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
@@ -27,8 +26,9 @@ const STEPS = {
   RESULTS_PREVIEW: 'results_preview',
   LEAD_CAPTURE: 'lead_capture',
   RESULTS_FINAL: 'results_final',
-  THANK_YOU: 'thank_you',
 };
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const FormFlow = () => {
   const debugContext = useDebugContext();
@@ -47,6 +47,7 @@ export const FormFlow = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
+  const [prefilledEmail, setPrefilledEmail] = useState(null);
 
   useEffect(() => {
     trackEvent('form_step_viewed', {
@@ -70,6 +71,21 @@ export const FormFlow = () => {
       setDebugMode(true);
     }
   }, [setDebugMode]);
+
+  // Activate prefilled email flow when ?email= is present and valid
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const emailParam = urlParams.get('email');
+    if (!emailParam) return;
+
+    const sanitizedEmail = emailParam.trim().replace(/\s/g, '+').toLowerCase();
+    if (EMAIL_REGEX.test(sanitizedEmail)) {
+      setPrefilledEmail(sanitizedEmail);
+      trackEvent('prefill_email_detected', {
+        has_prefill_email: true,
+      });
+    }
+  }, []);
 
   // Start the questionnaire
   const handleStart = useCallback(() => {
@@ -279,25 +295,33 @@ export const FormFlow = () => {
 
   // Request full report (go to lead capture)
   const handleRequestReport = useCallback(() => {
-    trackEvent('lead_capture_opened');
+    trackEvent('lead_capture_opened', {
+      flow_mode: prefilledEmail ? 'prefilled_email' : 'standard_form',
+    });
     setCurrentStep(STEPS.LEAD_CAPTURE);
-  }, []);
+  }, [prefilledEmail]);
 
-  // Submit lead capture form
-  const handleSubmitLead = useCallback(async (formData) => {
+  const persistLeadAndShowResults = useCallback(async (formData, source = 'standard_form') => {
     setIsSubmitting(true);
     setUserData(formData);
-    trackEvent('lead_form_submitted', {
-      has_first_name: Boolean(formData.firstName),
-      has_last_name: Boolean(formData.lastName),
-      has_company_name: Boolean(formData.companyName),
-      has_company_size: Boolean(formData.companySize),
-      has_industry: Boolean(formData.industry),
-      has_canton: Boolean(formData.canton),
-      consent_marketing: Boolean(formData.consentMarketing),
-      score_100: score100 ?? null,
-      severity_band: severityBand,
-    });
+    if (source === 'prefilled_email') {
+      trackEvent('prefilled_report_requested', {
+        score_100: score100 ?? null,
+        severity_band: severityBand,
+      });
+    } else {
+      trackEvent('lead_form_submitted', {
+        has_first_name: Boolean(formData.firstName),
+        has_last_name: Boolean(formData.lastName),
+        has_company_name: Boolean(formData.companyName),
+        has_company_size: Boolean(formData.companySize),
+        has_industry: Boolean(formData.industry),
+        has_canton: Boolean(formData.canton),
+        consent_marketing: Boolean(formData.consentMarketing),
+        score_100: score100 ?? null,
+        severity_band: severityBand,
+      });
+    }
 
     // Build complete payload with user data (answers_detailed not needed for Supabase but kept for consistency)
     const payload = {
@@ -345,6 +369,28 @@ export const FormFlow = () => {
     }
   }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand]);
 
+  // Submit lead capture form
+  const handleSubmitLead = useCallback(async (formData) => {
+    await persistLeadAndShowResults(formData, 'standard_form');
+  }, [persistLeadAndShowResults]);
+
+  const handleSendPrefilledReport = useCallback(async () => {
+    if (!prefilledEmail) return;
+
+    const prefilledData = {
+      firstName: '',
+      lastName: 'Prérempli URL',
+      email: prefilledEmail,
+      companyName: 'Non renseigné',
+      companySize: '',
+      industry: '',
+      canton: '',
+      consentMarketing: true,
+    };
+
+    await persistLeadAndShowResults(prefilledData, 'prefilled_email');
+  }, [prefilledEmail, persistLeadAndShowResults]);
+
   // Book consultation (Outlook Book With Me)
   const handleBookConsultation = useCallback(() => {
     trackEvent('booking_cta_clicked', {
@@ -354,14 +400,6 @@ export const FormFlow = () => {
     });
     window.open(BOOKING_CALENDAR_URL, '_blank');
   }, [currentStep, score100, severityBand]);
-
-  const handleContinueToFinal = useCallback(() => {
-    trackEvent('result_continue_to_final_confirmation', {
-      score_100: score100 ?? null,
-      severity_band: severityBand,
-    });
-    setCurrentStep(STEPS.THANK_YOU);
-  }, [score100, severityBand]);
 
   // Get current question and section
   const currentQuestion = questions[currentQuestionIndex];
@@ -496,7 +534,8 @@ export const FormFlow = () => {
               <LeadCaptureForm 
                 onSubmit={handleSubmitLead}
                 isLoading={isSubmitting}
-                score={score}
+                prefilledEmail={prefilledEmail}
+                onSendPrefilledReport={handleSendPrefilledReport}
               />
             </div>
           </div>
@@ -509,15 +548,6 @@ export const FormFlow = () => {
             severityBand={severityBand}
             topIssues={topIssues.length ? topIssues : priorities.map((p) => p.question).slice(0, 3)}
             teaser={teaser}
-            userEmail={userData?.email}
-            onBookConsultation={handleBookConsultation}
-            onContinue={handleContinueToFinal}
-          />
-        )}
-
-        {currentStep === STEPS.THANK_YOU && (
-          <FinalThankYouPage
-            key="thank-you"
             userEmail={userData?.email}
             onBookConsultation={handleBookConsultation}
           />
