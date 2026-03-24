@@ -59,8 +59,8 @@ function normalizeSeverityBand(score100, candidate) {
   if (candidate === 'critical' || candidate === 'vigilance' || candidate === 'good') {
     return candidate;
   }
-  if (score100 < 40) return 'critical';
-  if (score100 < 80) return 'vigilance';
+  if (score100 < 60) return 'critical';
+  if (score100 < 90) return 'vigilance';
   return 'good';
 }
 
@@ -70,6 +70,14 @@ function normalizeTopIssues(candidate) {
     .map((item) => String(item || '').trim())
     .filter(Boolean)
     .slice(0, 3);
+}
+
+function normalizeFocusPoints(candidate) {
+  if (!Array.isArray(candidate)) return [];
+  return candidate
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .slice(0, 4);
 }
 
 /**
@@ -146,6 +154,8 @@ async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
       lead_temperature: data.lead_temperature || classifyLead(payload.score?.level),
       email_user: data.email_user ?? null,
       email_sales: data.email_sales ?? null,
+      result_summary: typeof data?.result_summary === 'string' ? data.result_summary : '',
+      result_focus_points: normalizeFocusPoints(data?.result_focus_points),
     };
   } catch (err) {
     updateDebugLog(logId, createLogUpdate(
@@ -398,6 +408,8 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
         lead_temperature: response.lead_temperature || classifyLead(payload.score.level),
         email_user: response.email_user || null,
         email_sales: response.email_sales || null,
+        result_summary: typeof response?.result_summary === 'string' ? response.result_summary : '',
+        result_focus_points: normalizeFocusPoints(response?.result_focus_points),
       };
     } catch (parseError) {
       // If JSON parsing fails, use the raw text as teaser
@@ -437,6 +449,8 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
         lead_temperature: classifyLead(payload.score.level),
         email_user: null,
         email_sales: null,
+        result_summary: '',
+        result_focus_points: [],
       };
     }
     
@@ -486,6 +500,8 @@ function generateFallbackResponse(payload) {
     lead_temperature: classifyLead(score.level),
     email_user: null,
     email_sales: null,
+    result_summary: '',
+    result_focus_points: [],
   };
 }
 

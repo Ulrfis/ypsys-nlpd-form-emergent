@@ -33,8 +33,7 @@ export const LandingPage = ({ onStart }) => {
 
           {/* Subheadline */}
           <p className="text-sm sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 md:mb-10 max-w-2xl mx-auto leading-snug">
-            Depuis septembre 2023, la nouvelle Loi fédérale sur la protection des données 
-            renforce les obligations de tous les cabinets médicaux, laboratoires et fiduciaires en Suisse.
+            La nLPD impose des obligations techniques strictes depuis septembre 2023.
           </p>
 
           {/* Statistics - Narrative Format */}
@@ -65,9 +64,10 @@ export const LandingPage = ({ onStart }) => {
               </div>
               <div className="text-left min-w-0">
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Elles découvrent leurs failles trop tard : après un{' '}
-                  <strong>incident de sécurité</strong>, ou lors d&apos;une{' '}
-                  <strong>réclamation d&apos;un patient/client</strong>.
+                  Ce que vous risquez : sanctions car la nLPD impose une organisation et
+                  une gestion des données sensibles, perte de confiance de vos clients car il
+                  est obligatoire de les informer, coûts exorbitants car amendable jusqu&apos;a
+                  CHF 250 000. Et vous, etes-vous sur d&apos;etre conforme ?
                 </p>
               </div>
             </div>

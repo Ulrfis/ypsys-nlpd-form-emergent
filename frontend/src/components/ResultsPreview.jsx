@@ -1,22 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
   Sparkles,
   CheckCircle,
-  ArrowRight,
   FileText
 } from 'lucide-react';
+import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 
-const levelMessages = {
-  critical: 'Des actions prioritaires ont été repérées pour renforcer rapidement votre conformité.',
-  vigilance: 'Des points de vigilance ont été identifiés pour consolider votre conformité.',
-  good: 'Votre base est solide, avec quelques améliorations ciblées pour aller plus loin.',
-};
-
-export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestReport }) => {
-  const summaryMessage = levelMessages[severityBand] || levelMessages.vigilance;
+export const ResultsPreview = ({
+  prefilledEmail,
+  isLoading,
+  onSubmitLead,
+  onSendPrefilledReport,
+}) => {
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -39,13 +36,10 @@ export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestRe
             <h1 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-foreground mb-2 sm:mb-3">
               Votre analyse est terminée
             </h1>
-            {teaser ? (
-              <p className="text-sm sm:text-base text-muted-foreground">{teaser}</p>
-            ) : (
-              <p className="text-sm sm:text-base text-muted-foreground">
-                Nous avons évalué 15 critères techniques de conformité nLPD.
-              </p>
-            )}
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Découvrez vos axes prioritaires : Nous avons évalué 15 critères de conformité nLPD.
+              Des failles ont été détectées dans votre infrastructure.
+            </p>
           </div>
 
           <Card className="border-2 border-primary/20 bg-card mb-4 sm:mb-6">
@@ -56,7 +50,7 @@ export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestRe
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground">
-                    {summaryMessage}
+                    Votre rapport détaillé révèle :
                   </h3>
                 </div>
               </div>
@@ -66,14 +60,14 @@ export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestRe
           <Card className="border-2 border-border bg-card mb-4 sm:mb-8">
             <CardContent className="p-3 sm:p-5">
               <h3 className="text-sm sm:text-base font-semibold text-foreground mb-3 sm:mb-5">
-                Votre rapport détaillé vous indique:
+                Vous allez obtenir :
               </h3>
               <div className="space-y-2 sm:space-y-3">
                 {[
-                  "Votre score de conformité /100",
-                  "Les 3 failles prioritaires à corriger",
-                  "La roadmap d'action par urgence",
-                  "Les risques juridiques encourus",
+                  "Votre score de conformité /100: Etes-vous a 25/100 ou 85/100 ?",
+                  "Vos failles identifiées par priorité: lesquelles sont critiques, urgentes, moyennes ?",
+                  "L'impact financier estimé: combien peut coûter une non-conformité lors d'un contrôle ?",
+                  "Une analyse de votre situation et des propositions d'amélioration: que faire en priorité ?",
                 ].map((item, index) => (
                   <motion.div
                     key={index}
@@ -87,26 +81,23 @@ export const ResultsPreview = ({ teaser, severityBand = 'vigilance', onRequestRe
                   </motion.div>
                 ))}
               </div>
+              <p className="text-xs sm:text-sm text-foreground/80 mt-4">
+                Ne découvrez pas vos failles le jour de l'audit.
+              </p>
             </CardContent>
           </Card>
 
-          {/* CTA Button - tient sur une ligne mobile, marges */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="px-0 sm:px-0"
-          >
-            <Button
-              variant="premium"
-              size="lg"
-              onClick={onRequestReport}
-              className="w-full max-w-full group text-xs sm:text-base px-3 sm:px-6 min-w-0 h-auto py-3"
-            >
-              <span className="text-center whitespace-normal leading-tight">Recevoir mon résultat complet</span>
-              <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
-            </Button>
-          </motion.div>
+          <LeadCaptureForm
+            onSubmit={onSubmitLead}
+            isLoading={isLoading}
+            prefilledEmail={prefilledEmail}
+            onSendPrefilledReport={onSendPrefilledReport}
+            submitLabel="Recevoir mon diagnostic prioritaire"
+            hideFooterNote={true}
+          />
+          <p className="text-center text-xs italic text-muted-foreground mt-3">
+            Valeur du diagnostic de 650 CHF = offert
+          </p>
         </motion.div>
       </div>
     </div>

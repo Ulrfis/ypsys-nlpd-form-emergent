@@ -21,7 +21,14 @@ import {
 import { swissCantons, companySizes, industries } from '@/data/questionsData';
 import { User, Building2, Mail, MapPin, Users, Briefcase, ArrowRight, Shield, ChevronDown } from 'lucide-react';
 
-export const LeadCaptureForm = ({ onSubmit, isLoading, prefilledEmail, onSendPrefilledReport }) => {
+export const LeadCaptureForm = ({
+  onSubmit,
+  isLoading,
+  prefilledEmail,
+  onSendPrefilledReport,
+  submitLabel = 'Recevoir mon diagnostic prioritaire',
+  hideFooterNote = true,
+}) => {
   const [formData, setFormData] = useState({
     firstName: '', // Optional - now in collapsible section
     lastName: '', // Required - primary field
@@ -117,15 +124,11 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, prefilledEmail, onSendPre
                   </>
                 ) : (
                   <>
-                    Envoyer le rapport personnalisé
+                    Envoyer mon diagnostic prioritaire
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
               </Button>
-
-              <p className="text-center text-xs text-muted-foreground">
-                Gratuit • Sans engagement • Résultats immédiats
-              </p>
             </div>
           ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -336,15 +339,17 @@ export const LeadCaptureForm = ({ onSubmit, isLoading, prefilledEmail, onSendPre
                 </>
               ) : (
                 <>
-                  Recevoir mon rapport
+                  {submitLabel}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </Button>
 
-            <p className="text-center text-xs text-muted-foreground">
-              Gratuit • Sans engagement • Résultats immédiats
-            </p>
+            {!hideFooterNote && (
+              <p className="text-center text-xs text-muted-foreground">
+                Gratuit • Sans engagement • Résultats immédiats
+              </p>
+            )}
           </form>
           )}
         </CardContent>

@@ -262,9 +262,9 @@ def _score_100_from_payload(payload: dict) -> int:
 
 
 def _severity_band_from_score(score_100: int) -> str:
-    if score_100 < 40:
+    if score_100 < 60:
         return "critical"
-    if score_100 < 80:
+    if score_100 < 90:
         return "vigilance"
     return "good"
 
@@ -297,6 +297,8 @@ def _fallback_response(payload: dict) -> dict:
         "lead_temperature": _classify_lead(level),
         "email_user": None,
         "email_sales": None,
+        "result_summary": "",
+        "result_focus_points": [],
     }
 
 
@@ -364,6 +366,8 @@ async def analyze(request: AnalyzeRequest):
                 "lead_temperature": _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
                 "email_user": None,
                 "email_sales": None,
+                "result_summary": "",
+                "result_focus_points": [],
             }
 
         def _normalize_email_obj(obj):
@@ -419,6 +423,8 @@ async def analyze(request: AnalyzeRequest):
             "lead_temperature": response.get("lead_temperature") or _classify_lead(payload_dict.get("score", {}).get("level", "orange")),
             "email_user": email_user,
             "email_sales": email_sales,
+            "result_summary": response.get("result_summary") if isinstance(response.get("result_summary"), str) else "",
+            "result_focus_points": _normalize_top_issues(response.get("result_focus_points")) if isinstance(response.get("result_focus_points"), list) else [],
         }
     except HTTPException:
         raise

@@ -7,7 +7,6 @@ import { QuestionCard } from '@/components/QuestionCard';
 import { Button } from '@/components/ui/button';
 import { AnalysisLoadingScreen } from '@/components/AnalysisLoadingScreen';
 import { ResultsPreview } from '@/components/ResultsPreview';
-import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 import { ThankYouPage } from '@/components/ThankYouPage';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
@@ -24,7 +23,6 @@ const STEPS = {
   QUESTIONS: 'questions',
   ANALYZING: 'analyzing',
   RESULTS_PREVIEW: 'results_preview',
-  LEAD_CAPTURE: 'lead_capture',
   RESULTS_FINAL: 'results_final',
 };
 
@@ -43,6 +41,8 @@ export const FormFlow = () => {
   const [priorities, setPriorities] = useState([]);
   const [topIssues, setTopIssues] = useState([]);
   const [teaser, setTeaser] = useState('');
+  const [resultSummary, setResultSummary] = useState('');
+  const [resultFocusPoints, setResultFocusPoints] = useState([]);
   const [openaiResponse, setOpenaiResponse] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
@@ -138,15 +138,6 @@ export const FormFlow = () => {
     }
   }, [currentQuestionIndex]);
 
-  const handleGoToQuestion = useCallback((targetIndex) => {
-    if (targetIndex < 0 || targetIndex >= questions.length) return;
-    trackEvent('question_pagination_jump', {
-      from_question_index: currentQuestionIndex + 1,
-      to_question_index: targetIndex + 1,
-    });
-    setCurrentQuestionIndex(targetIndex);
-  }, [currentQuestionIndex]);
-
   // Build the answer texts for OpenAI (flat dict q1 -> label)
   const buildAnswerTexts = useCallback(() => {
     const answerTexts = {};
@@ -238,14 +229,20 @@ export const FormFlow = () => {
         : localScore100;
       const resolvedBand = typeof response.severity_band === 'string'
         ? response.severity_band
-        : resolvedScore100 < 40
+        : resolvedScore100 < 60
           ? 'critical'
-          : resolvedScore100 < 80
+          : resolvedScore100 < 90
             ? 'vigilance'
             : 'good';
       setScore100(resolvedScore100);
       setSeverityBand(resolvedBand);
       setTopIssues(normalizedTopIssues);
+      setResultSummary(typeof response.result_summary === 'string' ? response.result_summary : '');
+      setResultFocusPoints(
+        Array.isArray(response.result_focus_points)
+          ? response.result_focus_points.slice(0, 4).map((item) => String(item))
+          : []
+      );
       trackEvent('analysis_completed', {
         openai_score_100: response.score_100 ?? null,
         resolved_score_100: resolvedScore100,
@@ -275,10 +272,12 @@ export const FormFlow = () => {
       
       setTeaser(fallbackTeaser);
       const fallbackTopIssues = topPriorities.map((p) => p.question).slice(0, 3);
-      const fallbackBand = localScore100 < 40 ? 'critical' : localScore100 < 80 ? 'vigilance' : 'good';
+      const fallbackBand = localScore100 < 60 ? 'critical' : localScore100 < 90 ? 'vigilance' : 'good';
       setTopIssues(fallbackTopIssues);
       setSeverityBand(fallbackBand);
       setScore100(localScore100);
+      setResultSummary('');
+      setResultFocusPoints([]);
       setOpenaiResponse({
         teaser: fallbackTeaser,
         lead_temperature: 'WARM',
@@ -292,14 +291,6 @@ export const FormFlow = () => {
       setCurrentStep(STEPS.RESULTS_PREVIEW);
     }
   }, [answers, buildAnswerTexts, buildAnswersDetailed]);
-
-  // Request full report (go to lead capture)
-  const handleRequestReport = useCallback(() => {
-    trackEvent('lead_capture_opened', {
-      flow_mode: prefilledEmail ? 'prefilled_email' : 'standard_form',
-    });
-    setCurrentStep(STEPS.LEAD_CAPTURE);
-  }, [prefilledEmail]);
 
   const persistLeadAndShowResults = useCallback(async (formData, source = 'standard_form') => {
     setIsSubmitting(true);
@@ -403,8 +394,6 @@ export const FormFlow = () => {
 
   // Get current question and section
   const currentQuestion = questions[currentQuestionIndex];
-  const allQuestionsAnswered = questions.every((q) => Boolean(answers[q.id]));
-  const showReviewPagination = allQuestionsAnswered;
   const currentSection = currentQuestion 
     ? sections.find(s => s.id === currentQuestion.sectionId) 
     : null;
@@ -444,33 +433,6 @@ export const FormFlow = () => {
             {/* Barre de navigation fixe en bas (comme une barre de menu) */}
             <div className="flex-shrink-0 border-t border-border bg-card/95 backdrop-blur-sm sticky bottom-0 safe-area-bottom" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
               <div className="container mx-auto px-4 py-3 max-w-3xl">
-                {showReviewPagination && (
-                  <div className="mb-3 rounded-lg border border-border bg-background/70 px-3 py-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleGoToQuestion(currentQuestionIndex - 1)}
-                        disabled={currentQuestionIndex === 0}
-                        className="text-xs px-2 sm:px-3"
-                      >
-                        Page précédente
-                      </Button>
-                      <span className="text-xs sm:text-sm text-muted-foreground text-center">
-                        Relecture: question {currentQuestionIndex + 1}/{questions.length}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleGoToQuestion(currentQuestionIndex + 1)}
-                        disabled={currentQuestionIndex === questions.length - 1}
-                        className="text-xs px-2 sm:px-3"
-                      >
-                        Page suivante
-                      </Button>
-                    </div>
-                  </div>
-                )}
                 <div className="flex items-center justify-between gap-2">
                   <Button
                     variant="ghost"
@@ -522,23 +484,11 @@ export const FormFlow = () => {
         {currentStep === STEPS.RESULTS_PREVIEW && score && (
           <ResultsPreview
             key="results-preview"
-            teaser={teaser}
-            severityBand={severityBand}
-            onRequestReport={handleRequestReport}
+            prefilledEmail={prefilledEmail}
+            isLoading={isSubmitting}
+            onSubmitLead={handleSubmitLead}
+            onSendPrefilledReport={handleSendPrefilledReport}
           />
-        )}
-
-        {currentStep === STEPS.LEAD_CAPTURE && (
-          <div key="lead-capture" className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
-            <div className="container mx-auto px-4 max-w-[100vw]">
-              <LeadCaptureForm 
-                onSubmit={handleSubmitLead}
-                isLoading={isSubmitting}
-                prefilledEmail={prefilledEmail}
-                onSendPrefilledReport={handleSendPrefilledReport}
-              />
-            </div>
-          </div>
         )}
 
         {currentStep === STEPS.RESULTS_FINAL && score && (
@@ -547,8 +497,8 @@ export const FormFlow = () => {
             score100={score100 ?? Math.round(score.normalized * 10)}
             severityBand={severityBand}
             topIssues={topIssues.length ? topIssues : priorities.map((p) => p.question).slice(0, 3)}
-            teaser={teaser}
-            userEmail={userData?.email}
+            resultSummary={resultSummary}
+            resultFocusPoints={resultFocusPoints}
             onBookConsultation={handleBookConsultation}
           />
         )}
