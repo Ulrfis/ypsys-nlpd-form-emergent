@@ -13,6 +13,8 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 - **Référence panneau debug** : `CHANGELOG.md · [Non publié]`
 
 ### Ajouté
+- **Prompt OpenAI v3 clean** : nouveau fichier `docs/assistant-prompt-nlpd-v3-score100.md` avec champs UI (`result_summary`, `result_focus_points`), seuils 0-59/60-89/90-100 et section email `Synthèse et prochaines étapes` enrichie du bloc `Diagnostic NLPD prioritaire offert`
+- **Bloc offre diagnostic par palier** sur la page de résultat finale, avec CTA `Prenez rendez-vous ici` et mention `5 créneaux disponibles cette semaine`
 - **Nouveau contrat OpenAI v2** : prise en charge de `score_100`, `severity_band` (`critical`/`vigilance`/`good`) et `top_issues` (3 priorités), en plus de `teaser`, `lead_temperature`, `email_user`, `email_sales`
 - **Page de confirmation finale** : nouveau composant `FinalThankYouPage` après la page de résultat détaillée
 - **Documentation** : ajout de `docs/assistant-prompt-nlpd-v2-score100.md` et `docs/plan-maj-scoring-nlpd.md`
@@ -21,6 +23,19 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
   - intégration script SiteBehaviour (heatmap / comportement session)
 
 ### Modifié
+- **Versionnement prompts** : `docs/assistant-prompt-nlpd-v2-score100.md` conservé en v2, et migration des nouvelles consignes vers `docs/assistant-prompt-nlpd-v3-score100.md`
+- **Landing page** : texte d'accroche et encadré de risque réécrits selon le PDF `docs/Modifications formulaire nLPD 23-03-26.pdf`
+- **Questionnaire** : suppression de l'encadré de relecture sur la dernière question
+- **Parcours post-questions** : fusion de la page preview et du formulaire de capture (standard + prérempli `?email=`) sur une seule page
+- **CTA principal post-analyse** : `Recevoir mon diagnostic prioritaire` + mention *Valeur du diagnostic de 650 CHF = offert*
+- **Page résultat finale (`ThankYouPage`)** :
+  - suppression de la jauge,
+  - score affiché en grand,
+  - nouveaux titres par palier: `Exemplaire` (90-100), `Risque modéré` (60-89), `Risque élevé` (0-59),
+  - ajout des couches de contenu: générique + OpenAI + encart diagnostic
+- **Seuils score harmonisés frontend/backend** : `critical` 0-59, `vigilance` 60-89, `good` 90-100
+- **Contrat `/api/analyze` étendu** : ajout de `result_summary` et `result_focus_points` dans la réponse backend et la normalisation frontend
+- **Documentation API/OpenAI** : `docs/openai-analyze-and-supabase-flow.md` alignée sur le contrat v3
 - **PostHog** : activation uniquement si `REACT_APP_POSTHOG_KEY` est défini (clé retirée du code ; à définir en local dans `frontend/.env` et en prod dans Railway Variables pour le tracking usages / user flows).
 - **Flux post-questionnaire** : `Questions -> Transition sans score -> Capture email -> Résultat complet -> Thank you final`
 - **Écran avant email (`ResultsPreview`)** : suppression de toute notion de score ; texte orienté "analyse terminée" + livrables du rapport

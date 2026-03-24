@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-03-09 (nouveau flow score /100, prompt OpenAI v2, refonte responsive mobile/desktop)
+**Last Updated**: 2026-03-24 (refonte PDF 23-03-26, fusion preview+formulaire, score bands 0-59/60-89/90-100, prompt OpenAI v3)
 
 ---
 
@@ -420,6 +420,55 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 - cadre de décision documenté pour accélérer les prochains arbitrages produit.
 
 **Time**: ~1h
+
+---
+
+### 2026-03-24 — Mise à jour majeure selon PDF 23-03-26 🔷
+
+**Intent**: Appliquer la nouvelle version métier du formulaire nLPD avec repositionnement de l'offre diagnostic, fusion du parcours post-questions, et alignement complet UI/email/prompt.
+
+**Tool**: Cursor
+
+**Outcome**:
+- **Landing page** : texte d'introduction remplacé et encadré risque réécrit selon le PDF
+- **Questionnaire** : suppression de l'encadré de relecture en bas de la dernière question
+- **Parcours post-questions** :
+  - fusion de `ResultsPreview` et `LeadCaptureForm` en une seule page
+  - formulaire standard ou mode prérempli (`?email=`) affiché directement après l'analyse
+  - CTA principal renommé en **"Recevoir mon diagnostic prioritaire"**
+  - mention ajoutée : *Valeur du diagnostic de 650 CHF = offert*
+- **Restitution finale (`ThankYouPage`)** :
+  - suppression de la jauge
+  - score affiché en grand
+  - nouveaux paliers éditoriaux:
+    - `90-100`: **Exemplaire**
+    - `60-89`: **Risque modéré**
+    - `0-59`: **Risque élevé**
+  - combinaison de 3 couches de contenu :
+    1) texte générique par palier,
+    2) bloc OpenAI (`result_summary` + `result_focus_points`),
+    3) encart statique **Diagnostic NLPD prioritaire offert** avec promesse/CTA adaptés au palier
+- **Contrat OpenAI/API** :
+  - nouveaux champs `result_summary` et `result_focus_points`
+  - seuils harmonisés frontend/backend:
+    - `critical`: 0-59
+    - `vigilance`: 60-89
+    - `good`: 90-100
+- **Prompt assistant** :
+  - conservation de la **v2** dans son fichier d'origine
+  - création d'une **v3 clean** dans `docs/assistant-prompt-nlpd-v3-score100.md`
+  - ajout explicite dans l'email utilisateur de la section `## Synthèse et prochaines étapes` avec le paragraphe `### Diagnostic NLPD prioritaire offert` variable selon score
+- **Documentation flux** : `docs/openai-analyze-and-supabase-flow.md` alignée sur le contrat v3
+
+**Friction**: l'ancien fichier v2 a été temporairement écrasé par la version v3 lors de l'itération; il a fallu restaurer la v2 pour garder une séparation claire des versions de prompt.
+
+**Resolution**: retour à une stratégie explicite de versionnement documentaire:
+- `docs/assistant-prompt-nlpd-v2-score100.md` (stable / historique),
+- `docs/assistant-prompt-nlpd-v3-score100.md` (nouvelle version active).
+
+**Surprise**: la fusion preview + formulaire simplifie fortement la compréhension utilisateur tout en conservant le flux prérempli sans coût UX supplémentaire.
+
+**Time**: ~2h
 
 ---
 

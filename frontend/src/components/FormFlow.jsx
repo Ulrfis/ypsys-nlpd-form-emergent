@@ -484,6 +484,7 @@ export const FormFlow = () => {
         {currentStep === STEPS.RESULTS_PREVIEW && score && (
           <ResultsPreview
             key="results-preview"
+            score100={score100 ?? Math.round(score.normalized * 10)}
             prefilledEmail={prefilledEmail}
             isLoading={isSubmitting}
             onSubmitLead={handleSubmitLead}

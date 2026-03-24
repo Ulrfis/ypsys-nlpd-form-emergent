@@ -9,11 +9,14 @@ import {
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 
 export const ResultsPreview = ({
+  score100,
   prefilledEmail,
   isLoading,
   onSubmitLead,
   onSendPrefilledReport,
 }) => {
+  const safeScore = Math.min(Math.max(Math.round(score100 ?? 0), 0), 100);
+
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -52,6 +55,9 @@ export const ResultsPreview = ({
                   <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground">
                     Votre rapport détaillé révèle :
                   </h3>
+                  <p className="text-2xl sm:text-3xl font-bold text-primary">
+                    Score : {safeScore}/100
+                  </p>
                 </div>
               </div>
             </CardContent>

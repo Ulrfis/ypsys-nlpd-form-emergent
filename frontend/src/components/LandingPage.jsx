@@ -66,8 +66,10 @@ export const LandingPage = ({ onStart }) => {
                 <p className="text-xs sm:text-sm text-muted-foreground">
                   Ce que vous risquez : sanctions car la nLPD impose une organisation et
                   une gestion des données sensibles, perte de confiance de vos clients car il
-                  est obligatoire de les informer, coûts exorbitants car amendable jusqu&apos;a
-                  CHF 250 000. Et vous, etes-vous sur d&apos;etre conforme ?
+                  est obligatoire de les informer, coûts exorbitants car amendable jusqu&apos;à
+                  CHF 250 000.
+                  <br />
+                  Et vous, êtes-vous sûr d&apos;être conforme ?
                 </p>
               </div>
             </div>
