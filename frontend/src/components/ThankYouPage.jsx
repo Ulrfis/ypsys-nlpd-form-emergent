@@ -143,15 +143,15 @@ export const ThankYouPage = ({
                   <p key={`diag-${idx}`}>- {item}</p>
                 ))}
               </div>
-              <div className="space-y-3">
-                <p className="text-sm font-medium text-foreground">
-                  Réservez votre créneau (entretien de 30 minutes) :
-                </p>
-                <div className="relative w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+              <div className="space-y-4">
+                <h4 className="font-display text-xl sm:text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+                  Réservez votre créneau (entretien de 30 minutes)
+                </h4>
+                <div className="relative w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm min-h-[720px] sm:min-h-[800px]">
                   <iframe
                     title="Réserver un entretien de 30 minutes — calendrier TidyCal"
                     src={BOOKING_EMBED_URL}
-                    className="w-full min-h-[520px] sm:min-h-[600px] h-[65vh] max-h-[860px] border-0"
+                    className="block w-full min-h-[720px] sm:min-h-[800px] lg:min-h-[880px] h-[82vh] sm:h-[80vh] max-h-[1280px] border-0"
                     allow="payment *; clipboard-write"
                   />
                 </div>
