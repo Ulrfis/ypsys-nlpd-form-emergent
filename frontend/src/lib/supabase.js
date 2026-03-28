@@ -183,33 +183,32 @@ export async function insertFormSubmissionAfterAnalysis(payload, openaiResponse)
 /**
  * After lead form: update row created at analysis time, then email_outputs if applicable.
  */
-export async function finalizeFormSubmissionLead(submissionId, payload, openaiResponse) {
-  const logId = addDebugLog(createLog('supabase', 'update.form_submissions.lead', {
-    endpoint: 'form_submissions',
-    method: 'UPDATE',
-    payload: { id: submissionId, user: payload.user },
+export async function finalizeFormSubmissionLead(submissionId, submissionSessionId, payload, openaiResponse) {
+  const logId = addDebugLog(createLog('supabase', 'rpc.finalize_submission_lead', {
+    endpoint: 'rpc/finalize_submission_lead',
+    method: 'RPC',
+    payload: { id: submissionId, session_id: submissionSessionId, user: payload.user },
   }));
   const t0 = Date.now();
 
-  const { data: updatedRows, error: updError } = await supabase
-    .from('form_submissions')
-    .update({
-      user_email: payload.user.email || null,
-      user_first_name: payload.user.first_name ?? '',
-      user_last_name: payload.user.last_name || '',
-      company_name: payload.user.company,
-      company_size: payload.user.size || null,
-      industry: payload.user.industry || null,
-      canton: payload.user.canton || null,
-      consent_marketing: true,
-      consent_timestamp: new Date().toISOString(),
-      status: 'lead_complete',
-    })
-    .eq('id', submissionId)
-    .select('id');
+  const { data: updatedId, error: updError } = await supabase.rpc('finalize_submission_lead', {
+    p_submission_id: submissionId,
+    p_session_id: submissionSessionId,
+    p_user_email: payload.user.email || null,
+    p_user_first_name: payload.user.first_name ?? '',
+    p_user_last_name: payload.user.last_name || '',
+    p_company_name: payload.user.company || null,
+    p_company_size: payload.user.size || null,
+    p_industry: payload.user.industry || null,
+    p_canton: payload.user.canton || null,
+    p_consent_marketing: Boolean(payload?.consent?.marketing),
+    p_consent_analytics: Boolean(payload?.consent?.analytics),
+    p_policy_version: payload?.consent?.policy_version || '2026-03-28',
+    p_source: payload?.consent?.source || 'lead_form',
+  });
 
   updateDebugLog(logId, createLogUpdate(
-    { data: updatedRows, error: updError },
+    { data: { id: updatedId }, error: updError },
     Date.now() - t0,
     updError ? 'error' : 'success'
   ));
@@ -218,17 +217,16 @@ export async function finalizeFormSubmissionLead(submissionId, payload, openaiRe
     console.error('Error updating submission with lead:', updError);
     throw updError;
   }
-  if (!updatedRows?.length) {
+  if (!updatedId) {
     const msg =
-      '[Supabase] UPDATE form_submissions matched 0 rows. Usually missing RLS policy "Allow anon update on form_submissions" ' +
-      'or wrong submission id. Run the policy from docs/supabase-schema-update.sql in the SQL Editor.';
+      '[Supabase] finalize_submission_lead RPC returned empty result. Check submission/session id pair and SQL migration.';
     console.error(msg);
     throw new Error(msg);
   }
 
   await insertEmailOutputsIfComplete(submissionId, payload, openaiResponse);
 
-  return { id: submissionId };
+  return { id: updatedId };
 }
 
 /**

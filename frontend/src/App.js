@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ConsentProvider, useConsent } from "@/context/ConsentContext";
 import { FormFlow } from "@/components/FormFlow";
 import { PrivacyPolicy } from "@/components/PrivacyPolicy";
-import { ConsentPopup } from "@/components/ConsentPopup";
+import { ConsentPopup, CookiePreferencesButton } from "@/components/ConsentPopup";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, trackPageView } from "@/lib/analytics";
 
@@ -49,6 +49,7 @@ function App() {
                 <Route path="*" element={<FormFlow />} />
               </Routes>
               <ConsentPopup />
+              <CookiePreferencesButton />
             </BrowserRouter>
             <Toaster position="top-right" />
           </div>

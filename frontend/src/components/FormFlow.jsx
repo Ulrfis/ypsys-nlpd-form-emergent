@@ -21,6 +21,7 @@ import {
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 import { trackEvent, identifyUser } from '@/lib/analytics';
 import { useDebugContext } from '@/context/DebugContext';
+import { useConsent } from '@/context/ConsentContext';
 
 // Steps in the form flow
 const STEPS = {
@@ -32,10 +33,12 @@ const STEPS = {
 };
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CONSENT_POLICY_VERSION = '2026-03-28';
 
 export const FormFlow = () => {
   const debugContext = useDebugContext();
   const { toggleDebugMode, setDebugMode } = debugContext;
+  const { hasConsentedToAnalytics } = useConsent();
   const [currentStep, setCurrentStep] = useState(STEPS.LANDING);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -55,6 +58,7 @@ export const FormFlow = () => {
   const [prefilledEmail, setPrefilledEmail] = useState(null);
   /** Supabase row id after post-analysis insert; used to UPDATE on lead submit instead of duplicating rows */
   const [submissionId, setSubmissionId] = useState(null);
+  const [submissionSessionId, setSubmissionSessionId] = useState(null);
 
   useEffect(() => {
     trackEvent('form_step_viewed', {
@@ -100,6 +104,7 @@ export const FormFlow = () => {
       total_questions: questions.length,
     });
     setSubmissionId(null);
+    setSubmissionSessionId(null);
     setCurrentStep(STEPS.QUESTIONS);
     setCurrentQuestionIndex(0);
   }, []);
@@ -254,6 +259,7 @@ export const FormFlow = () => {
       try {
         const submission = await insertFormSubmissionAfterAnalysis(payload, response);
         setSubmissionId(submission.id);
+        setSubmissionSessionId(submission.session_id || null);
         trackEvent('analysis_saved_to_supabase_success', { submission_id: submission.id });
       } catch (supaErr) {
         console.error('Post-analysis Supabase insert failed:', supaErr);
@@ -299,6 +305,7 @@ export const FormFlow = () => {
       try {
         const submission = await insertFormSubmissionAfterAnalysis(payload, fallbackOpenaiResponse);
         setSubmissionId(submission.id);
+        setSubmissionSessionId(submission.session_id || null);
         trackEvent('analysis_saved_to_supabase_success', { submission_id: submission.id });
       } catch (supaErr) {
         console.error('Post-analysis Supabase insert failed (fallback path):', supaErr);
@@ -362,22 +369,30 @@ export const FormFlow = () => {
         level: score.riskLevel,
       },
       has_email: true,
+      consent: {
+        marketing: Boolean(formData.consentMarketing),
+        analytics: Boolean(hasConsentedToAnalytics),
+        policy_version: CONSENT_POLICY_VERSION,
+        source,
+      },
     };
 
     try {
-      identifyUser(formData.email, {
-        company_name: formData.companyName || null,
-        company_size: formData.companySize || null,
-        industry: formData.industry || null,
-        canton: formData.canton || null,
-      });
-      if (submissionId) {
+      if (hasConsentedToAnalytics) {
+        identifyUser(formData.email, {
+          company_name: formData.companyName || null,
+          company_size: formData.companySize || null,
+          industry: formData.industry || null,
+          canton: formData.canton || null,
+        });
+      }
+      if (submissionId && submissionSessionId) {
         try {
-          await finalizeFormSubmissionLead(submissionId, payload, openaiResponse);
+          await finalizeFormSubmissionLead(submissionId, submissionSessionId, payload, openaiResponse);
           console.log('Submission lead finalized in Supabase');
         } catch (finalizeErr) {
-          // e.g. RLS blocks UPDATE or 0 rows — still persist lead via full insert so Dreamlit can fire
-          console.warn('finalizeFormSubmissionLead failed, falling back to saveSubmission:', finalizeErr);
+          // If RPC is missing/misconfigured, fallback keeps lead capture operational.
+          console.warn('finalizeFormSubmissionLead RPC failed, falling back to saveSubmission:', finalizeErr);
           await saveSubmission(payload, openaiResponse);
           trackEvent('lead_saved_to_supabase_fallback_full_insert', {
             reason: finalizeErr?.message?.slice(0, 200) || 'unknown',
@@ -400,7 +415,7 @@ export const FormFlow = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand, submissionId]);
+  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand, submissionId, submissionSessionId, hasConsentedToAnalytics]);
 
   // Submit lead capture form
   const handleSubmitLead = useCallback(async (formData) => {

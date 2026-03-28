@@ -52,6 +52,7 @@ export function ConsentProvider({ children }) {
   const acceptAll = useCallback(() => decideConsent({ analytics: true }, 'accept_all'), [decideConsent]);
   const refuseOptional = useCallback(() => decideConsent({ analytics: false }, 'refuse_optional'), [decideConsent]);
   const saveCustom = useCallback((preferences) => decideConsent(preferences, 'customize'), [decideConsent]);
+  const resetConsentChoice = useCallback(() => setConsent(null), []);
 
   const value = useMemo(() => ({
     consent,
@@ -60,7 +61,8 @@ export function ConsentProvider({ children }) {
     acceptAll,
     refuseOptional,
     saveCustom,
-  }), [consent, acceptAll, refuseOptional, saveCustom]);
+    resetConsentChoice,
+  }), [consent, acceptAll, refuseOptional, saveCustom, resetConsentChoice]);
 
   return <ConsentContext.Provider value={value}>{children}</ConsentContext.Provider>;
 }
