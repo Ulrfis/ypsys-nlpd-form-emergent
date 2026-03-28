@@ -165,7 +165,9 @@ export const ThankYouPage = ({
                   Ouvrir le calendrier dans un nouvel onglet
                 </a>
               </div>
-              <p className="text-xs italic text-muted-foreground mt-4">5 créneaux disponibles cette semaine</p>
+              <p className="text-xs italic text-muted-foreground mt-4">
+                Les disponibilités réelles sont celles affichées dans le calendrier ci-dessus.
+              </p>
             </CardContent>
           </Card>
 

@@ -28,6 +28,7 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
   - intégration script SiteBehaviour (heatmap / comportement session)
 
 ### Modifié
+- **Créneaux TidyCal** : suppression du libellé fixe « 5 créneaux disponibles cette semaine » sur `ThankYouPage` (non calculé côté app) ; prompts assistant v3/v4 mis à jour pour interdire tout nombre de créneaux ou délai agenda dans l’email — **à recoller dans l’assistant OpenAI** pour les nouveaux envois
 - **Score /100** : source de vérité unique = calcul questionnaire (`calculateScore` / `payload.score.normalized`) ; backend `server.py` et frontend `openai.js` + `FormFlow.jsx` n’utilisent plus le `score_100` du modèle pour l’affichage (corrige incohérences type 10 vs 67 pour les mêmes réponses)
 - **Calendrier résultat final** : embed iframe TidyCal meeting 30 min (`lib/booking.js` : `BOOKING_MEETING_PAGE_URL`, `BOOKING_EMBED_URL`) sur `ThankYouPage` avec lien d’ouverture nouvel onglet
 - **Documentation flux** : `docs/openai-analyze-and-supabase-flow.md` — flux réel insert/update, score imposé, référence prompt v4

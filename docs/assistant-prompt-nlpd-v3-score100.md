@@ -68,24 +68,21 @@ Contenu selon score:
   - Gérer les derniers risques identifiés
   - Définir les objectifs à améliorer
   - Obtenir une roadmap d'action personnalisée
-  - CTA: `Prenez rendez-vous ici`
-  - `5 créneaux disponibles cette semaine`
+  - CTA: `Prenez rendez-vous ici` (sans nombre de créneaux ni « cette semaine » — non fourni par les données)
 
 - **60-89**
   - Traiter vos risques identifiés
   - Définir les objectifs à prioriser
   - Prendre en compte les risques financiers
   - Obtenir une roadmap d'action personnalisée
-  - CTA: `Prenez rendez-vous ici`
-  - `5 créneaux disponibles cette semaine`
+  - CTA: `Prenez rendez-vous ici` (idem)
 
 - **0-59**
   - Traiter vos trois risques majeurs
   - Définir les objectifs à prioriser
   - Prendre en compte les risques financiers
   - Obtenir une roadmap d'action personnalisée
-  - CTA: `Prenez rendez-vous ici`
-  - `5 créneaux disponibles cette semaine`
+  - CTA: `Prenez rendez-vous ici` (idem)
 
 8. Signature fixe:
 

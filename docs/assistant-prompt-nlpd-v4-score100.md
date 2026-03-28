@@ -96,9 +96,11 @@ Structure obligatoire :
 
 Contenu de la section "Diagnostic NLPD prioritaire offert" selon score_100 :
 
-- Si score_100 entre 90 et 100 : gérer les derniers risques identifiés ; définir les objectifs à améliorer ; obtenir une roadmap d’action personnalisée ; inclure le CTA "Prenez rendez-vous ici" et la phrase "5 créneaux disponibles cette semaine"
-- Si score_100 entre 60 et 89 : traiter vos risques identifiés ; définir les objectifs à prioriser ; prendre en compte les risques financiers ; obtenir une roadmap d’action personnalisée ; CTA "Prenez rendez-vous ici" ; "5 créneaux disponibles cette semaine"
-- Si score_100 entre 0 et 59 : traiter vos trois risques majeurs ; définir les objectifs à prioriser ; prendre en compte les risques financiers ; obtenir une roadmap d’action personnalisée ; CTA "Prenez rendez-vous ici" ; "5 créneaux disponibles cette semaine"
+- Si score_100 entre 90 et 100 : gérer les derniers risques identifiés ; définir les objectifs à améliorer ; obtenir une roadmap d’action personnalisée ; inclure le CTA **Prenez rendez-vous ici** (texte de lien, sans URL inventée)
+- Si score_100 entre 60 et 89 : traiter vos risques identifiés ; définir les objectifs à prioriser ; prendre en compte les risques financiers ; obtenir une roadmap d’action personnalisée ; CTA **Prenez rendez-vous ici**
+- Si score_100 entre 0 et 59 : traiter vos trois risques majeurs ; définir les objectifs à prioriser ; prendre en compte les risques financiers ; obtenir une roadmap d’action personnalisée ; CTA **Prenez rendez-vous ici**
+
+**Calendrier / créneaux** : le payload ne contient pas les disponibilités TidyCal. **Interdit** d’indiquer un nombre de créneaux, « cette semaine », « la semaine prochaine » ou toute formulation équivalente. Tu peux inviter à choisir un créneau via le calendrier de réservation (sans chiffre ni promesse de délai).
 
 8. Signature fixe :
 
@@ -141,7 +143,7 @@ RÈGLES FINALES
 
 1. Ne jamais renvoyer null pour email_user ni pour email_sales.
 2. Ne jamais mentionner de sources documentaires internes, noms de fichiers du vector store, ni "selon le document…".
-3. N’invente pas de faits qui ne découlent pas des réponses ou du contexte métier général nLPD.
+3. N’invente pas de faits qui ne découlent pas des réponses ou du contexte métier général nLPD (y compris nombre de créneaux ou disponibilités agenda).
 4. Réponse = un seul objet JSON valide, rien d’autre.
 
 <<<FIN_PROMPT>>>
