@@ -191,7 +191,7 @@ export async function finalizeFormSubmissionLead(submissionId, payload, openaiRe
   }));
   const t0 = Date.now();
 
-  const { error: updError } = await supabase
+  const { data: updatedRows, error: updError } = await supabase
     .from('form_submissions')
     .update({
       user_email: payload.user.email || null,
@@ -205,10 +205,11 @@ export async function finalizeFormSubmissionLead(submissionId, payload, openaiRe
       consent_timestamp: new Date().toISOString(),
       status: 'lead_complete',
     })
-    .eq('id', submissionId);
+    .eq('id', submissionId)
+    .select('id');
 
   updateDebugLog(logId, createLogUpdate(
-    { error: updError },
+    { data: updatedRows, error: updError },
     Date.now() - t0,
     updError ? 'error' : 'success'
   ));
@@ -216,6 +217,13 @@ export async function finalizeFormSubmissionLead(submissionId, payload, openaiRe
   if (updError) {
     console.error('Error updating submission with lead:', updError);
     throw updError;
+  }
+  if (!updatedRows?.length) {
+    const msg =
+      '[Supabase] UPDATE form_submissions matched 0 rows. Usually missing RLS policy "Allow anon update on form_submissions" ' +
+      'or wrong submission id. Run the policy from docs/supabase-schema-update.sql in the SQL Editor.';
+    console.error(msg);
+    throw new Error(msg);
   }
 
   await insertEmailOutputsIfComplete(submissionId, payload, openaiResponse);

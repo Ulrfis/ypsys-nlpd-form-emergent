@@ -372,8 +372,17 @@ export const FormFlow = () => {
         canton: formData.canton || null,
       });
       if (submissionId) {
-        await finalizeFormSubmissionLead(submissionId, payload, openaiResponse);
-        console.log('Submission lead finalized in Supabase');
+        try {
+          await finalizeFormSubmissionLead(submissionId, payload, openaiResponse);
+          console.log('Submission lead finalized in Supabase');
+        } catch (finalizeErr) {
+          // e.g. RLS blocks UPDATE or 0 rows — still persist lead via full insert so Dreamlit can fire
+          console.warn('finalizeFormSubmissionLead failed, falling back to saveSubmission:', finalizeErr);
+          await saveSubmission(payload, openaiResponse);
+          trackEvent('lead_saved_to_supabase_fallback_full_insert', {
+            reason: finalizeErr?.message?.slice(0, 200) || 'unknown',
+          });
+        }
       } else {
         await saveSubmission(payload, openaiResponse);
         console.log('Submission saved to Supabase (full insert, no prior analysis row)');
