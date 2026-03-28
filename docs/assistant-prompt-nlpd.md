@@ -1,7 +1,7 @@
 # Prompt assistant OpenAI — Formulaire nLPD Ypsys
 
 > Statut: version historique.  
-> Version recommandée en production: `docs/assistant-prompt-nlpd-v2-score100.md`.
+> Version recommandée en production: `docs/assistant-prompt-nlpd-v4-score100.md`.
 
 À copier dans les **Instructions** de l’assistant OpenAI. Ce prompt impose le **format JSON exact** attendu par l’application pour stocker les 3 sorties (teaser, email_user, email_sales) dans Supabase.
 

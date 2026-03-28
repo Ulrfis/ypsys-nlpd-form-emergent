@@ -235,6 +235,12 @@ BEGIN
     CREATE POLICY "Allow anon insert on email_outputs"
       ON public.email_outputs FOR INSERT TO anon WITH CHECK (true);
   END IF;
+  -- UPDATE: required to finalize a row created after analysis (placeholder user) when the lead form is submitted.
+  -- Same trust model as INSERT anon (permissive). Apply only if you accept anon clients updating by id.
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename = 'form_submissions' AND policyname = 'Allow anon update on form_submissions') THEN
+    CREATE POLICY "Allow anon update on form_submissions"
+      ON public.form_submissions FOR UPDATE TO anon USING (true) WITH CHECK (true);
+  END IF;
 END $$;
 
 -- Pour permettre la lecture (dashboard, exports) : créer des politiques SELECT

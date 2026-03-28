@@ -48,17 +48,14 @@ function withTimeout(promise, timeoutMs, errorMessage) {
   ]);
 }
 
-function normalizeScore100(payload, candidate) {
-  if (Number.isFinite(candidate)) return Math.min(Math.max(Math.round(candidate), 0), 100);
+/** Score /100 from questionnaire calculation only (payload.score.normalized -> x10). Never use model output for this. */
+function score100FromApplication(payload) {
   const normalized = payload?.score?.normalized;
   if (Number.isFinite(normalized)) return Math.min(Math.max(Math.round(normalized * 10), 0), 100);
   return 50;
 }
 
-function normalizeSeverityBand(score100, candidate) {
-  if (candidate === 'critical' || candidate === 'vigilance' || candidate === 'good') {
-    return candidate;
-  }
+function severityBandFromScore100(score100) {
   if (score100 < 60) return 'critical';
   if (score100 < 90) return 'vigilance';
   return 'good';
@@ -143,12 +140,11 @@ async function generateAnalysisViaBackend(payload, onStatusUpdate = () => {}) {
     ));
     onStatusUpdate('complete', 'Analyse terminée!');
 
+    const appScore100 = score100FromApplication(payload);
     return {
-      score_100: normalizeScore100(payload, data?.score_100),
-      severity_band: normalizeSeverityBand(
-        normalizeScore100(payload, data?.score_100),
-        data?.severity_band
-      ),
+      score_100: appScore100,
+      score_100_assistant_raw: Number.isFinite(data?.score_100) ? Math.round(Number(data.score_100)) : null,
+      severity_band: severityBandFromScore100(appScore100),
       top_issues: normalizeTopIssues(data?.top_issues),
       teaser: data.teaser || generateDefaultTeaser(payload),
       lead_temperature: data.lead_temperature || classifyLead(payload.score?.level),
@@ -397,12 +393,11 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
 
       onStatusUpdate('complete', 'Analyse terminée!');
 
+      const appScore100 = score100FromApplication(payload);
       return {
-        score_100: normalizeScore100(payload, response?.score_100),
-        severity_band: normalizeSeverityBand(
-          normalizeScore100(payload, response?.score_100),
-          response?.severity_band
-        ),
+        score_100: appScore100,
+        score_100_assistant_raw: Number.isFinite(response?.score_100) ? Math.round(Number(response.score_100)) : null,
+        severity_band: severityBandFromScore100(appScore100),
         top_issues: normalizeTopIssues(response?.top_issues),
         teaser: response.teaser || response.summary || generateDefaultTeaser(payload),
         lead_temperature: response.lead_temperature || classifyLead(payload.score.level),
@@ -441,9 +436,11 @@ export async function generateAnalysis(payload, onStatusUpdate = () => {}) {
 
       onStatusUpdate('complete', 'Analyse terminée!');
 
+      const appScoreParseFail = score100FromApplication(payload);
       return {
-        score_100: normalizeScore100(payload),
-        severity_band: normalizeSeverityBand(normalizeScore100(payload)),
+        score_100: appScoreParseFail,
+        score_100_assistant_raw: null,
+        severity_band: severityBandFromScore100(appScoreParseFail),
         top_issues: [],
         teaser: responseText.substring(0, 800),
         lead_temperature: classifyLead(payload.score.level),
@@ -492,9 +489,11 @@ function generateFallbackResponse(payload) {
     red: `Attention ${user.first_name}! Votre organisation ${user.company} présente un score de ${score.normalized}/10, révélant des failles critiques dans votre conformité nLPD. Un audit du PFPDT pourrait entraîner des sanctions allant jusqu'à CHF 250'000. Une mise en conformité urgente est recommandée. Consultez votre email pour un plan d'action prioritaire.`,
   };
   
+  const appScore = score100FromApplication(payload);
   return {
-    score_100: normalizeScore100(payload),
-    severity_band: normalizeSeverityBand(normalizeScore100(payload)),
+    score_100: appScore,
+    score_100_assistant_raw: null,
+    severity_band: severityBandFromScore100(appScore),
     top_issues: [],
     teaser: teasers[score.level] || teasers.orange,
     lead_temperature: classifyLead(score.level),

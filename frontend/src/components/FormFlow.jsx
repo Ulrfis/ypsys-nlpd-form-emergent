@@ -12,7 +12,12 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { DebugPanel } from '@/components/DebugPanel';
 import { ArrowLeft, ArrowRight, Send } from 'lucide-react';
 import { generateAnalysis, setOpenAIDebugContext } from '@/lib/openai';
-import { saveSubmission, setDebugContext } from '@/lib/supabase';
+import {
+  saveSubmission,
+  insertFormSubmissionAfterAnalysis,
+  finalizeFormSubmissionLead,
+  setDebugContext,
+} from '@/lib/supabase';
 import { BOOKING_CALENDAR_URL } from '@/lib/booking';
 import { trackEvent, identifyUser } from '@/lib/analytics';
 import { useDebugContext } from '@/context/DebugContext';
@@ -48,6 +53,8 @@ export const FormFlow = () => {
   const [analysisStatus, setAnalysisStatus] = useState('creating_thread');
   const [analysisMessage, setAnalysisMessage] = useState('');
   const [prefilledEmail, setPrefilledEmail] = useState(null);
+  /** Supabase row id after post-analysis insert; used to UPDATE on lead submit instead of duplicating rows */
+  const [submissionId, setSubmissionId] = useState(null);
 
   useEffect(() => {
     trackEvent('form_step_viewed', {
@@ -92,6 +99,7 @@ export const FormFlow = () => {
     trackEvent('questionnaire_started', {
       total_questions: questions.length,
     });
+    setSubmissionId(null);
     setCurrentStep(STEPS.QUESTIONS);
     setCurrentQuestionIndex(0);
   }, []);
@@ -224,17 +232,10 @@ export const FormFlow = () => {
       const normalizedTopIssues = Array.isArray(response.top_issues) && response.top_issues.length
         ? response.top_issues.slice(0, 3).map((item) => String(item))
         : topPriorities.map((p) => p.question).slice(0, 3);
-      const resolvedScore100 = Number.isFinite(response.score_100)
-        ? Math.min(Math.max(Math.round(response.score_100), 0), 100)
-        : localScore100;
-      const resolvedBand = typeof response.severity_band === 'string'
-        ? response.severity_band
-        : resolvedScore100 < 60
-          ? 'critical'
-          : resolvedScore100 < 90
-            ? 'vigilance'
-            : 'good';
-      setScore100(resolvedScore100);
+      // Score /100 and severity band come only from questionnaire math (see openai.js / backend); never from the model.
+      const resolvedBand =
+        localScore100 < 60 ? 'critical' : localScore100 < 90 ? 'vigilance' : 'good';
+      setScore100(localScore100);
       setSeverityBand(resolvedBand);
       setTopIssues(normalizedTopIssues);
       setResultSummary(typeof response.result_summary === 'string' ? response.result_summary : '');
@@ -244,11 +245,22 @@ export const FormFlow = () => {
           : []
       );
       trackEvent('analysis_completed', {
-        openai_score_100: response.score_100 ?? null,
-        resolved_score_100: resolvedScore100,
+        assistant_score_100_raw: response.score_100_assistant_raw ?? null,
+        resolved_score_100: localScore100,
         severity_band: resolvedBand,
         top_issues_count: normalizedTopIssues.length,
       });
+
+      try {
+        const submission = await insertFormSubmissionAfterAnalysis(payload, response);
+        setSubmissionId(submission.id);
+        trackEvent('analysis_saved_to_supabase_success', { submission_id: submission.id });
+      } catch (supaErr) {
+        console.error('Post-analysis Supabase insert failed:', supaErr);
+        trackEvent('analysis_saved_to_supabase_failed', {
+          error_message: supaErr?.message || 'unknown_error',
+        });
+      }
 
       // Small delay to show completion state
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -270,21 +282,38 @@ export const FormFlow = () => {
           : 'Des failles critiques nécessitent une action immédiate.'
       } Recevez votre rapport complet pour découvrir vos priorités d'action.`;
       
-      setTeaser(fallbackTeaser);
       const fallbackTopIssues = topPriorities.map((p) => p.question).slice(0, 3);
       const fallbackBand = localScore100 < 60 ? 'critical' : localScore100 < 90 ? 'vigilance' : 'good';
-      setTopIssues(fallbackTopIssues);
-      setSeverityBand(fallbackBand);
-      setScore100(localScore100);
-      setResultSummary('');
-      setResultFocusPoints([]);
-      setOpenaiResponse({
+      const fallbackOpenaiResponse = {
         teaser: fallbackTeaser,
         lead_temperature: 'WARM',
         score_100: localScore100,
         severity_band: fallbackBand,
         top_issues: fallbackTopIssues,
-      });
+        email_user: null,
+        email_sales: null,
+        result_summary: '',
+        result_focus_points: [],
+      };
+
+      try {
+        const submission = await insertFormSubmissionAfterAnalysis(payload, fallbackOpenaiResponse);
+        setSubmissionId(submission.id);
+        trackEvent('analysis_saved_to_supabase_success', { submission_id: submission.id });
+      } catch (supaErr) {
+        console.error('Post-analysis Supabase insert failed (fallback path):', supaErr);
+        trackEvent('analysis_saved_to_supabase_failed', {
+          error_message: supaErr?.message || 'unknown_error',
+        });
+      }
+
+      setTeaser(fallbackTeaser);
+      setTopIssues(fallbackTopIssues);
+      setSeverityBand(fallbackBand);
+      setScore100(localScore100);
+      setResultSummary('');
+      setResultFocusPoints([]);
+      setOpenaiResponse(fallbackOpenaiResponse);
       setAnalysisStatus('complete');
       
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -342,9 +371,13 @@ export const FormFlow = () => {
         industry: formData.industry || null,
         canton: formData.canton || null,
       });
-      // Save to Supabase with the previously generated OpenAI response
-      await saveSubmission(payload, openaiResponse);
-      console.log('Submission saved to Supabase');
+      if (submissionId) {
+        await finalizeFormSubmissionLead(submissionId, payload, openaiResponse);
+        console.log('Submission lead finalized in Supabase');
+      } else {
+        await saveSubmission(payload, openaiResponse);
+        console.log('Submission saved to Supabase (full insert, no prior analysis row)');
+      }
       trackEvent('lead_saved_to_supabase_success');
       
       setCurrentStep(STEPS.RESULTS_FINAL);
@@ -358,7 +391,7 @@ export const FormFlow = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand]);
+  }, [buildAnswerTexts, buildAnswersDetailed, score, openaiResponse, score100, severityBand, submissionId]);
 
   // Submit lead capture form
   const handleSubmitLead = useCallback(async (formData) => {

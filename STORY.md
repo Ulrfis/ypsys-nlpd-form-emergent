@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-03-24 (refonte PDF 23-03-26, fusion preview+formulaire, score bands 0-59/60-89/90-100, prompt OpenAI v3)
+**Last Updated**: 2026-03-28 (Supabase insert post-analyse + RLS UPDATE, score déterministe app/API, prompt v4, TidyCal embed, doc tests assistant)
 
 ---
 
@@ -469,6 +469,27 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 **Surprise**: la fusion preview + formulaire simplifie fortement la compréhension utilisateur tout en conservant le flux prérempli sans coût UX supplémentaire.
 
 **Time**: ~2h
+
+---
+
+### 2026-03-28 — Supabase sans attendre l’email, score cohérent, prompt v4 🔷
+
+**Intent**: Enregistrer les réponses dans `form_submissions` même si l’utilisateur abandonne avant la capture lead ; supprimer la variance du score /100 imputable au modèle ; documenter les tests assistant ; finaliser l’embed TidyCal sur la page post-email.
+
+**Tool**: Cursor
+
+**Outcome**:
+- **Supabase** : après `generateAnalysis`, `insertFormSubmissionAfterAnalysis` écrit une ligne avec `answers`, scores, teaser, `consent_marketing` false jusqu’au lead ; à la soumission du formulaire, `finalizeFormSubmissionLead` fait un UPDATE (email, identité, consentement, `status` `lead_complete`) puis INSERT `email_outputs` si règles Dreamlit remplies ; `saveSubmission` reste en secours si `submissionId` absent ; politique RLS **UPDATE** `anon` sur `form_submissions` ajoutée dans `docs/supabase-schema-update.sql` (à exécuter en SQL Editor prod)
+- **Score** : backend et frontend imposent `score_100` depuis `payload.score` ; `score_100_assistant_raw` exposé pour audit ; UI (`FormFlow`) utilise le score local pour la bande de sévérité
+- **Prompt** : `docs/assistant-prompt-nlpd-v4-score100.md` — instructions complètes à coller dans OpenAI (marqueurs `<<<DEBUT_PROMPT>>>` / `<<<FIN_PROMPT>>>`) ; cohérence rédactionnelle avec le score questionnaire
+- **Docs** : `docs/assistant-regression-testing.md`, mise à jour `docs/openai-analyze-and-supabase-flow.md`, `docs/assistant-prompt-nlpd.md` → v4
+- **TidyCal** : `ThankYouPage` — iframe `?embed=1` sur le créneau `30-minute-meeting`, lien nouvel onglet conservé pour analytics
+
+**Friction**: sans politique RLS UPDATE, le finalize lead échouait silencieusement ou en erreur pour les clients ; le score « inventé » par l’assistant créait de la méfiance côté client (tests 10/100 vs 67/100).
+
+**Resolution**: policy UPDATE idempotente documentée ; source de vérité score = questionnaire ; prompt v4 rappelle d’utiliser `round(normalized×10)` dans les textes.
+
+**Time**: ~1 session (impl + doc)
 
 ---
 

@@ -291,6 +291,7 @@ def _fallback_response(payload: dict) -> dict:
     score_100 = _score_100_from_payload(payload)
     return {
         "score_100": score_100,
+        "score_100_assistant_raw": None,
         "severity_band": _severity_band_from_score(score_100),
         "top_issues": [],
         "teaser": teasers.get(level, teasers["orange"]),
@@ -360,6 +361,7 @@ async def analyze(request: AnalyzeRequest):
             )
             return {
                 "score_100": _score_100_from_payload(payload_dict),
+                "score_100_assistant_raw": None,
                 "severity_band": _severity_band_from_score(_score_100_from_payload(payload_dict)),
                 "top_issues": [],
                 "teaser": text[:800],
@@ -407,16 +409,18 @@ async def analyze(request: AnalyzeRequest):
                 text[:500] if text else "",
             )
 
-        resolved_score_100 = response.get("score_100")
-        if not isinstance(resolved_score_100, (int, float)):
-            resolved_score_100 = _score_100_from_payload(payload_dict)
-        resolved_score_100 = max(0, min(100, int(round(float(resolved_score_100)))))
-        resolved_band = response.get("severity_band")
-        if resolved_band not in ("critical", "vigilance", "good"):
-            resolved_band = _severity_band_from_score(resolved_score_100)
+        # Application score is the only source of truth (questionnaire weights). Assistant output is ignored for display/storage.
+        assistant_score_raw = response.get("score_100")
+        if not isinstance(assistant_score_raw, (int, float)):
+            assistant_score_raw = None
+        else:
+            assistant_score_raw = max(0, min(100, int(round(float(assistant_score_raw)))))
+        resolved_score_100 = _score_100_from_payload(payload_dict)
+        resolved_band = _severity_band_from_score(resolved_score_100)
 
         return {
             "score_100": resolved_score_100,
+            "score_100_assistant_raw": assistant_score_raw,
             "severity_band": resolved_band,
             "top_issues": _normalize_top_issues(response.get("top_issues")),
             "teaser": response.get("teaser") or response.get("summary") or _fallback_response(payload_dict)["teaser"],

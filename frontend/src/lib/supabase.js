@@ -1,3 +1,8 @@
+/**
+ * form_submissions: insert after analysis (insertFormSubmissionAfterAnalysis), then UPDATE on lead
+ * (finalizeFormSubmissionLead). saveSubmission = one-shot INSERT if no submissionId.
+ * email_outputs: INSERT only when lead + full OpenAI email bodies (Dreamlit).
+ */
 import { createClient } from '@supabase/supabase-js';
 import { createLog, createLogUpdate } from './debugLogger';
 
@@ -37,75 +42,14 @@ export const supabase = createClient(
   supabaseAnonKey && supabaseAnonKey !== 'placeholder-key' ? supabaseAnonKey : 'placeholder-key'
 );
 
+function generateSessionId() {
+  return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
 /**
- * Save form submission to Supabase.
- *
- * Relation garantie : une soumission = un email (payload.user.email) + les réponses (payload.answers)
- * + la sortie OpenAI (openaiResponse) générée pour ces mêmes réponses (même session).
- *
- * email_outputs : écrit UNIQUEMENT quand OpenAI a renvoyé email_user et email_sales (subject + body_markdown).
- * Dreamlit envoie les emails dès qu'une nouvelle ligne est créée dans email_outputs ; il faut donc
- * écrire TOUTES les données en une seule fois (submission_id, user_email, lead_temperature,
- * email_user_subject, email_user_markdown, email_sales_subject, email_sales_markdown) pour que
- * l'envoi d'emails ait les textes générés par OpenAI.
+ * Dreamlit: insert email_outputs only when lead + full OpenAI email bodies.
  */
-export async function saveSubmission(payload, openaiResponse) {
-  // LOG 1: Insert form_submissions
-  const formLogId = addDebugLog(createLog('supabase', 'insert.form_submissions', {
-    endpoint: 'form_submissions',
-    method: 'INSERT',
-    payload: {
-      answers: payload.answers,
-      score: payload.score,
-      user: payload.user,
-    },
-    isHighlighted: true,
-    highlightReason: 'form_data',
-  }));
-
-  const startTime = Date.now();
-
-  // 1. Save form submission
-  const { data: submission, error: subError } = await supabase
-    .from('form_submissions')
-    .insert({
-      user_email: payload.user.email || null,
-      user_first_name: payload.user.first_name,
-      user_last_name: payload.user.last_name,
-      company_name: payload.user.company,
-      company_size: payload.user.size || null,
-      industry: payload.user.industry || null,
-      canton: payload.user.canton || null,
-      answers: payload.answers,
-      score_raw: payload.score.value,
-      score_normalized: payload.score.normalized,
-      risk_level: payload.score.level,
-      teaser_text: openaiResponse?.teaser || null,
-      lead_temperature: openaiResponse?.lead_temperature || null,
-      status: openaiResponse ? 'teaser_ready' : 'pending',
-      consent_marketing: true,
-      consent_timestamp: new Date().toISOString(),
-      session_id: generateSessionId(),
-    })
-    .select()
-    .single();
-
-  updateDebugLog(formLogId, createLogUpdate(
-    { data: submission, error: subError },
-    Date.now() - startTime,
-    subError ? 'error' : 'success'
-  ));
-
-  if (subError) {
-    console.error('Error saving submission:', subError);
-    if (!isSupabaseConfigured) {
-      console.error('[Supabase] Configure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in Railway (or your host) Variables, then redeploy.');
-    }
-    throw subError;
-  }
-
-  // 2. Save email outputs UNIQUEMENT quand OpenAI a renvoyé les 3 textes (email_user + email_sales avec subject et body_markdown).
-  // Dreamlit envoie les emails à la création d'une ligne : il faut toutes les données en une seule fois.
+async function insertEmailOutputsIfComplete(submissionId, payload, openaiResponse) {
   const hasFullEmailOutputs =
     payload.has_email &&
     openaiResponse?.email_user &&
@@ -126,44 +70,168 @@ export async function saveSubmission(payload, openaiResponse) {
     );
   }
 
-  if (hasFullEmailOutputs) {
-    const emailLogId = addDebugLog(createLog('supabase', 'insert.email_outputs', {
-      endpoint: 'email_outputs',
-      method: 'INSERT',
-      payload: {
-        submission_id: submission.id,
-        user_email: payload.user.email,
-        lead_temperature: openaiResponse.lead_temperature,
-      },
-    }));
+  if (!hasFullEmailOutputs) return;
 
-    const emailStartTime = Date.now();
+  const emailLogId = addDebugLog(createLog('supabase', 'insert.email_outputs', {
+    endpoint: 'email_outputs',
+    method: 'INSERT',
+    payload: {
+      submission_id: submissionId,
+      user_email: payload.user.email,
+      lead_temperature: openaiResponse.lead_temperature,
+    },
+  }));
 
-    const { error: emailError } = await supabase
-      .from('email_outputs')
-      .insert({
-        submission_id: submission.id,
-        user_email: payload.user.email,
-        lead_temperature: openaiResponse.lead_temperature,
-        email_user_subject: openaiResponse.email_user.subject,
-        email_user_markdown: openaiResponse.email_user.body_markdown,
-        email_sales_subject: openaiResponse.email_sales.subject,
-        email_sales_markdown: openaiResponse.email_sales.body_markdown,
-      });
+  const emailStartTime = Date.now();
 
-    updateDebugLog(emailLogId, createLogUpdate(
-      { error: emailError },
-      Date.now() - emailStartTime,
-      emailError ? 'error' : 'success'
-    ));
+  const { error: emailError } = await supabase
+    .from('email_outputs')
+    .insert({
+      submission_id: submissionId,
+      user_email: payload.user.email,
+      lead_temperature: openaiResponse.lead_temperature,
+      email_user_subject: openaiResponse.email_user.subject,
+      email_user_markdown: openaiResponse.email_user.body_markdown,
+      email_sales_subject: openaiResponse.email_sales.subject,
+      email_sales_markdown: openaiResponse.email_sales.body_markdown,
+    });
 
-    if (emailError) {
-      console.error('Error saving email outputs:', emailError);
-      // Don't throw here, the main submission was saved
+  updateDebugLog(emailLogId, createLogUpdate(
+    { error: emailError },
+    Date.now() - emailStartTime,
+    emailError ? 'error' : 'success'
+  ));
+
+  if (emailError) {
+    console.error('Error saving email outputs:', emailError);
+  }
+}
+
+/**
+ * Insert form_submissions row (shared by analysis-only and full lead path).
+ */
+async function insertFormSubmissionRow(payload, openaiResponse, { consentMarketing, consentTimestamp }) {
+  const formLogId = addDebugLog(createLog('supabase', 'insert.form_submissions', {
+    endpoint: 'form_submissions',
+    method: 'INSERT',
+    payload: {
+      answers: payload.answers,
+      score: payload.score,
+      user: payload.user,
+    },
+    isHighlighted: true,
+    highlightReason: 'form_data',
+  }));
+
+  const startTime = Date.now();
+  const sessionId = generateSessionId();
+
+  const { data: submission, error: subError } = await supabase
+    .from('form_submissions')
+    .insert({
+      user_email: payload.user.email || null,
+      user_first_name: payload.user.first_name ?? '',
+      user_last_name: payload.user.last_name || '',
+      company_name: payload.user.company,
+      company_size: payload.user.size || null,
+      industry: payload.user.industry || null,
+      canton: payload.user.canton || null,
+      answers: payload.answers,
+      score_raw: payload.score.value,
+      score_normalized: payload.score.normalized,
+      risk_level: payload.score.level,
+      teaser_text: openaiResponse?.teaser || null,
+      lead_temperature: openaiResponse?.lead_temperature || null,
+      status: openaiResponse ? 'teaser_ready' : 'pending',
+      consent_marketing: consentMarketing,
+      consent_timestamp: consentTimestamp,
+      session_id: sessionId,
+    })
+    .select()
+    .single();
+
+  updateDebugLog(formLogId, createLogUpdate(
+    { data: submission, error: subError },
+    Date.now() - startTime,
+    subError ? 'error' : 'success'
+  ));
+
+  if (subError) {
+    console.error('Error saving submission:', subError);
+    if (!isSupabaseConfigured) {
+      console.error('[Supabase] Configure REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY in Railway (or your host) Variables, then redeploy.');
     }
+    throw subError;
   }
 
+  await insertEmailOutputsIfComplete(submission.id, payload, openaiResponse);
+
   return submission;
+}
+
+/**
+ * After OpenAI analysis (no lead yet): persist answers + teaser so abandons are captured.
+ * consent_marketing false until the user submits the lead form.
+ */
+export async function insertFormSubmissionAfterAnalysis(payload, openaiResponse) {
+  return insertFormSubmissionRow(payload, openaiResponse, {
+    consentMarketing: false,
+    consentTimestamp: null,
+  });
+}
+
+/**
+ * After lead form: update row created at analysis time, then email_outputs if applicable.
+ */
+export async function finalizeFormSubmissionLead(submissionId, payload, openaiResponse) {
+  const logId = addDebugLog(createLog('supabase', 'update.form_submissions.lead', {
+    endpoint: 'form_submissions',
+    method: 'UPDATE',
+    payload: { id: submissionId, user: payload.user },
+  }));
+  const t0 = Date.now();
+
+  const { error: updError } = await supabase
+    .from('form_submissions')
+    .update({
+      user_email: payload.user.email || null,
+      user_first_name: payload.user.first_name ?? '',
+      user_last_name: payload.user.last_name || '',
+      company_name: payload.user.company,
+      company_size: payload.user.size || null,
+      industry: payload.user.industry || null,
+      canton: payload.user.canton || null,
+      consent_marketing: true,
+      consent_timestamp: new Date().toISOString(),
+      status: 'lead_complete',
+    })
+    .eq('id', submissionId);
+
+  updateDebugLog(logId, createLogUpdate(
+    { error: updError },
+    Date.now() - t0,
+    updError ? 'error' : 'success'
+  ));
+
+  if (updError) {
+    console.error('Error updating submission with lead:', updError);
+    throw updError;
+  }
+
+  await insertEmailOutputsIfComplete(submissionId, payload, openaiResponse);
+
+  return { id: submissionId };
+}
+
+/**
+ * Full insert in one shot (fallback when no row was created after analysis, e.g. failed insert or refreshed session).
+ * Same as historical saveSubmission behavior.
+ */
+export async function saveSubmission(payload, openaiResponse) {
+  return insertFormSubmissionRow(payload, openaiResponse, {
+    consentMarketing: true,
+    consentTimestamp: new Date().toISOString(),
+  });
 }
 
 /**
@@ -184,13 +252,6 @@ export async function updateSubmissionStatus(submissionId, status, teaserText = 
     console.error('Error updating submission status:', error);
     throw error;
   }
-}
-
-/**
- * Generate a unique session ID
- */
-function generateSessionId() {
-  return `sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 export default supabase;

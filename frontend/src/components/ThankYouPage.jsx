@@ -1,8 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calendar, ArrowRight } from 'lucide-react';
+import { BOOKING_EMBED_URL, BOOKING_MEETING_PAGE_URL } from '@/lib/booking';
 const RESULT_COPY = {
   good: {
     title: 'Exemplaire',
@@ -144,17 +143,29 @@ export const ThankYouPage = ({
                   <p key={`diag-${idx}`}>- {item}</p>
                 ))}
               </div>
-              <Button
-                variant="premium"
-                size="lg"
-                onClick={onBookConsultation}
-                className="group w-full max-w-full text-xs sm:text-base px-3 sm:px-6 min-w-0 h-auto py-3"
-              >
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                <span className="text-center whitespace-normal leading-tight">Prenez rendez-vous ici</span>
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 transition-transform group-hover:translate-x-1" />
-              </Button>
-              <p className="text-xs italic text-muted-foreground mt-3">5 créneaux disponibles cette semaine</p>
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">
+                  Réservez votre créneau (entretien de 30 minutes) :
+                </p>
+                <div className="relative w-full overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+                  <iframe
+                    title="Réserver un entretien de 30 minutes — calendrier TidyCal"
+                    src={BOOKING_EMBED_URL}
+                    className="w-full min-h-[520px] sm:min-h-[600px] h-[65vh] max-h-[860px] border-0"
+                    allow="payment *; clipboard-write"
+                  />
+                </div>
+                <a
+                  href={BOOKING_MEETING_PAGE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => onBookConsultation?.()}
+                  className="inline-block text-sm text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                >
+                  Ouvrir le calendrier dans un nouvel onglet
+                </a>
+              </div>
+              <p className="text-xs italic text-muted-foreground mt-4">5 créneaux disponibles cette semaine</p>
             </CardContent>
           </Card>
 

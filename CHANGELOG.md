@@ -13,6 +13,11 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
 - **Référence panneau debug** : `CHANGELOG.md · [Non publié]`
 
 ### Ajouté
+- **Supabase — persistance post-analyse** : `insertFormSubmissionAfterAnalysis` et `finalizeFormSubmissionLead` dans `frontend/src/lib/supabase.js` ; état `submissionId` dans `FormFlow` ; INSERT des réponses juste après l’analyse OpenAI (sans attendre l’email), UPDATE au formulaire lead ; fallback `saveSubmission` si pas de ligne initiale
+- **RLS Supabase** : politique `Allow anon update on form_submissions` documentée dans `docs/supabase-schema-update.sql` (requis en prod pour le UPDATE lead)
+- **API `/api/analyze`** : champ `score_100_assistant_raw` (valeur proposée par le modèle, audit) en plus du `score_100` imposé par le questionnaire
+- **Prompt OpenAI v4** : `docs/assistant-prompt-nlpd-v4-score100.md` — prompt intégral à coller dans l’assistant, score rédactionnel aligné sur `payload.score` (l’app écrase le score affiché)
+- **Documentation** : `docs/assistant-regression-testing.md` (tests Playground / export Supabase)
 - **Prompt OpenAI v3 clean** : nouveau fichier `docs/assistant-prompt-nlpd-v3-score100.md` avec champs UI (`result_summary`, `result_focus_points`), seuils 0-59/60-89/90-100 et section email `Synthèse et prochaines étapes` enrichie du bloc `Diagnostic NLPD prioritaire offert`
 - **Bloc offre diagnostic par palier** sur la page de résultat finale, avec CTA `Prenez rendez-vous ici` et mention `5 créneaux disponibles cette semaine`
 - **Nouveau contrat OpenAI v2** : prise en charge de `score_100`, `severity_band` (`critical`/`vigilance`/`good`) et `top_issues` (3 priorités), en plus de `teaser`, `lead_temperature`, `email_user`, `email_sales`
@@ -23,6 +28,10 @@ Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
   - intégration script SiteBehaviour (heatmap / comportement session)
 
 ### Modifié
+- **Score /100** : source de vérité unique = calcul questionnaire (`calculateScore` / `payload.score.normalized`) ; backend `server.py` et frontend `openai.js` + `FormFlow.jsx` n’utilisent plus le `score_100` du modèle pour l’affichage (corrige incohérences type 10 vs 67 pour les mêmes réponses)
+- **Calendrier résultat final** : embed iframe TidyCal meeting 30 min (`lib/booking.js` : `BOOKING_MEETING_PAGE_URL`, `BOOKING_EMBED_URL`) sur `ThankYouPage` avec lien d’ouverture nouvel onglet
+- **Documentation flux** : `docs/openai-analyze-and-supabase-flow.md` — flux réel insert/update, score imposé, référence prompt v4
+- **Référence prompt historique** : `docs/assistant-prompt-nlpd.md` pointe vers la v4 en production
 - **Versionnement prompts** : `docs/assistant-prompt-nlpd-v2-score100.md` conservé en v2, et migration des nouvelles consignes vers `docs/assistant-prompt-nlpd-v3-score100.md`
 - **Landing page** : texte d'accroche et encadré de risque réécrits selon le PDF `docs/Modifications formulaire nLPD 23-03-26.pdf`
 - **Questionnaire** : suppression de l'encadré de relecture sur la dernière question
