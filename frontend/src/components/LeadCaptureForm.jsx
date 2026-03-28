@@ -25,7 +25,7 @@ export const LeadCaptureForm = ({
   onSubmit,
   isLoading,
   prefilledEmail,
-  onSendPrefilledReport,
+  onSendPrefilledReport = () => {},
   submitLabel = 'Recevoir mon diagnostic prioritaire',
   hideFooterNote = true,
 }) => {
@@ -42,6 +42,8 @@ export const LeadCaptureForm = ({
 
   const [errors, setErrors] = useState({});
   const [showOptional, setShowOptional] = useState(false);
+  const [prefilledConsent, setPrefilledConsent] = useState(false);
+  const [prefilledConsentError, setPrefilledConsentError] = useState('');
 
   const validateForm = () => {
     const newErrors = {};
@@ -79,6 +81,15 @@ export const LeadCaptureForm = ({
     }
   };
 
+  const handlePrefilledSubmit = () => {
+    if (!prefilledConsent) {
+      setPrefilledConsentError('Vous devez accepter pour recevoir vos résultats');
+      return;
+    }
+    setPrefilledConsentError('');
+    onSendPrefilledReport({ consentMarketing: true });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -109,12 +120,46 @@ export const LeadCaptureForm = ({
                 <p className="font-medium text-foreground break-all">{prefilledEmail}</p>
               </div>
 
+              <div className="space-y-2 rounded-lg border border-border p-4">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="prefilled-consent"
+                    checked={prefilledConsent}
+                    onCheckedChange={(checked) => {
+                      setPrefilledConsent(Boolean(checked));
+                      if (prefilledConsentError) setPrefilledConsentError('');
+                    }}
+                    className={prefilledConsentError ? 'border-danger' : ''}
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="prefilled-consent" className="text-sm font-normal cursor-pointer">
+                      J&apos;accepte de recevoir mes résultats nLPD et d&apos;être contacté par YPSYS.
+                      <span className="text-danger"> *</span>
+                    </Label>
+                  </div>
+                </div>
+                {prefilledConsentError && (
+                  <p className="text-sm text-danger">{prefilledConsentError}</p>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Vos données sont traitées conformément à notre{' '}
+                <Link
+                  to="/politique-confidentialite"
+                  className="text-primary underline hover:no-underline font-medium"
+                >
+                  politique de confidentialité
+                </Link>
+                {' '}et peuvent être transmises à nos sous-traitants techniques (hébergement, analyse, emailing) uniquement pour fournir le service.
+              </p>
+
               <Button
                 type="button"
                 variant="premium"
                 size="lg"
                 className="w-full"
-                onClick={onSendPrefilledReport}
+                onClick={handlePrefilledSubmit}
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -320,7 +365,7 @@ export const LeadCaptureForm = ({
                 >
                   politique de confidentialité
                 </Link>
-                {' '}et ne seront jamais partagées avec des tiers.
+                {' '}et peuvent être transmises à nos sous-traitants techniques (hébergement, analyse, emailing) uniquement pour fournir le service.
               </p>
             </div>
 

@@ -407,8 +407,9 @@ export const FormFlow = () => {
     await persistLeadAndShowResults(formData, 'standard_form');
   }, [persistLeadAndShowResults]);
 
-  const handleSendPrefilledReport = useCallback(async () => {
+  const handleSendPrefilledReport = useCallback(async ({ consentMarketing } = {}) => {
     if (!prefilledEmail) return;
+    if (!consentMarketing) return;
 
     const prefilledData = {
       firstName: '',
@@ -418,7 +419,7 @@ export const FormFlow = () => {
       companySize: '',
       industry: '',
       canton: '',
-      consentMarketing: true,
+      consentMarketing: Boolean(consentMarketing),
     };
 
     await persistLeadAndShowResults(prefilledData, 'prefilled_email');

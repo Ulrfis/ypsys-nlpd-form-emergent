@@ -114,7 +114,7 @@ export const LandingPage = ({ onStart }) => {
               {
                 icon: <Shield className="w-5 h-5 sm:w-6 sm:h-6" />,
                 title: "Confidentiel",
-                description: "Vos données ne sont jamais partagées avec des tiers"
+                description: "Vos données sont traitées de façon sécurisée avec des sous-traitants techniques encadrés"
               },
               {
                 icon: <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6" />,
