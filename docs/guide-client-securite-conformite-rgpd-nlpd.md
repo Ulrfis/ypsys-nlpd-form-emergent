@@ -25,8 +25,26 @@ L'idée n'est pas de "faire peur", mais d'éviter 3 risques concrets:
 2. Durcissement progressif des accès Supabase (RLS) et fin des mises à jour publiques trop larges.
 3. Passage vers une finalisation de lead via RPC sécurisée au lieu d'`UPDATE` direct.
 4. Clarification du wording pour éviter les promesses inexactes.
+5. Suppression du script SiteBehaviour et recentrage analytics sur GrainQL (et PostHog selon configuration).
+6. Anonymisation forcée côté backend du payload envoyé à OpenAI (pas de nom/prénom/email transmis au modèle).
 
 C'est une base saine.
+
+---
+
+## Mise à jour technique (29 mars 2026)
+
+Les points suivants sont désormais alignés dans le code:
+
+1. **OpenAI**: l'API `/api/analyze` envoie une version anonymisée du payload au modèle (réponses questionnaire + score uniquement, sans identité lead).
+2. **Analytics**: le script SiteBehaviour a été retiré du frontend.
+3. **Stack analytics active**: GrainQL est utilisé; PostHog reste optionnel et dépend d'une variable build `REACT_APP_POSTHOG_KEY`.
+4. **Emailing**: les contenus `email_user` / `email_sales` sont stockés dans Supabase puis envoyés par Dreamlit.
+5. **Politique de confidentialité**: le texte mentionne désormais GrainQL, Dreamlit, et l'anonymisation OpenAI.
+
+Point de vigilance opérationnel:
+
+1. Si `REACT_APP_POSTHOG_KEY` n'est pas injectée au build de production, PostHog reste désactivé même si GrainQL fonctionne.
 
 ---
 
@@ -74,6 +92,7 @@ Le consentement doit être libre, spécifique, éclairé et traçable.
 1. Vérifier/archiver les DPA (OpenAI, Supabase, Dreamlit).
 2. Documenter les transferts internationaux (base juridique, garanties type SCC).
 3. Mettre à jour la politique de confidentialité avec ces éléments.
+4. Pour Dreamlit, conserver une preuve documentaire à jour (DPA/SCC/subprocessors) avant de conclure la conformité contractuelle.
 
 **Pourquoi c'est important**:  
 La conformité ne dépend pas que du code. Elle dépend aussi des contrats et du cadre légal.
