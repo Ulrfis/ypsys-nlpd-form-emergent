@@ -276,6 +276,44 @@ def _normalize_top_issues(candidate: Any) -> List[str]:
     return cleaned[:3]
 
 
+def _sanitize_openai_payload(payload: dict) -> dict:
+    """
+    Enforce anonymization before sending data to OpenAI.
+    Only questionnaire answers/scores are transmitted, never lead identity data.
+    """
+    answers = payload.get("answers") if isinstance(payload.get("answers"), dict) else {}
+    score = payload.get("score") if isinstance(payload.get("score"), dict) else {}
+    answers_detailed = payload.get("answers_detailed") if isinstance(payload.get("answers_detailed"), list) else []
+
+    sanitized_answers_detailed: List[Dict[str, str]] = []
+    for item in answers_detailed:
+        if not isinstance(item, dict):
+            continue
+        sanitized_answers_detailed.append(
+            {
+                "question_id": str(item.get("question_id", "")),
+                "question": str(item.get("question", "")),
+                "answer": str(item.get("answer", "")),
+            }
+        )
+
+    return {
+        "user": {
+            "first_name": "Utilisateur",
+            "last_name": "",
+            "email": None,
+            "company": "Votre organisation",
+            "size": None,
+            "industry": None,
+            "canton": None,
+        },
+        "answers": answers,
+        "answers_detailed": sanitized_answers_detailed,
+        "score": score,
+        "has_email": False,
+    }
+
+
 def _fallback_response(payload: dict) -> dict:
     user = payload.get("user", {})
     score = payload.get("score", {})
@@ -314,7 +352,8 @@ async def analyze(request: AnalyzeRequest):
 
     client = OpenAI(api_key=OPENAI_API_KEY)
     payload_dict = request.payload.model_dump()
-    payload_str = __import__("json").dumps(payload_dict, indent=2)
+    openai_payload = _sanitize_openai_payload(payload_dict)
+    payload_str = __import__("json").dumps(openai_payload, indent=2)
 
     try:
         thread = client.beta.threads.create()

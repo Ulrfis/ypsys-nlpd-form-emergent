@@ -41,7 +41,7 @@ Créer un outil d'évaluation de conformité à la nouvelle Loi fédérale sur l
 - [x] Support mode sombre/clair
 - [x] Configuration Railway pour déploiement
 - [x] Version mobile : CTA et barre de navigation toujours visibles, questionnaire compact
-- [x] Conformité RGPD/nLPD : politique de confidentialité, API backend protégée, logs sanitisés. Analytics PostHog (usages, user flows) si REACT_APP_POSTHOG_KEY est défini
+- [x] Conformité RGPD/nLPD : politique de confidentialité, API backend protégée, logs sanitisés. Analytics via GrainQL (et PostHog en option selon configuration)
 
 ---
 
@@ -86,7 +86,6 @@ Copier `frontend/.env.example` en `frontend/.env` et `backend/.env.example` en `
 | **REACT_APP_SUPABASE_URL** | `frontend/.env` uniquement | Supabase Dashboard → votre projet → **Settings** → **API** → **Project URL** |
 | **REACT_APP_SUPABASE_ANON_KEY** | `frontend/.env` uniquement | Supabase Dashboard → **Settings** → **API** → **Project API keys** → **anon public** |
 | **REACT_APP_POSTHOG_KEY** | `frontend/.env` + Railway Variables | PostHog → Project Settings → Project API key. Requis pour le tracking (usages, parcours). |
-| **REACT_APP_SITEBEHAVIOUR_SECRET** | `frontend/.env` (optionnel) | SiteBehaviour project secret |
 | **REACT_APP_RELEASE_VERSION** | `frontend/.env` (optionnel) | Version applicative affichée dans le Debug Panel |
 | **REACT_APP_RELEASE_ITERATION** | `frontend/.env` (optionnel) | Identifiant d'itération affiché dans le Debug Panel |
 | **REACT_APP_RELEASE_DATETIME** | `frontend/.env` (optionnel) | Date/heure de build publié affichée dans le Debug Panel |
@@ -161,16 +160,17 @@ Le déploiement utilise Nixpacks avec un virtual environment Python pour contour
 ---
 
 ## Notes
-- Les données utilisateurs sont stockées exclusivement dans Supabase (Europe) pour conformité nLPD
-- L'appel OpenAI transite par le backend (proxy `/api/analyze`) : le frontend envoie toutes les réponses (answers + answers_detailed), l'assistant renvoie désormais `score_100`, `severity_band`, `top_issues`, `teaser`, `email_user`, `email_sales` ; les sorties emails sont stockées dans Supabase (form_submissions + email_outputs)
+- Les données utilisateurs sont stockées exclusivement dans Supabase (Europe) pour conformité nLPD.
+- L'appel OpenAI transite par le backend (proxy `/api/analyze`) avec anonymisation forcée du payload avant envoi au modèle (pas d'email/nom/prénom transmis à OpenAI).
+- Les sorties `email_user` et `email_sales` sont stockées dans Supabase (`email_outputs`) puis envoyées via Dreamlit.
 - Schéma Supabase : exécuter [docs/supabase-schema-update.sql](docs/supabase-schema-update.sql) dans le SQL Editor pour créer ou mettre à jour les tables (form_submissions, email_outputs). Voir [docs/openai-analyze-and-supabase-flow.md](docs/openai-analyze-and-supabase-flow.md) pour le format des requêtes/réponses
 - Le formulaire est entièrement en français
 - Timeout OpenAI de 45 secondes avec fallback local
 - Questionnaire révisé le 2026-02-02 : textes simplifiés, réorganisation des options, ton moins culpabilisant
 - Nouveau flow résultats (2026-03-09) : transition sans score avant email, résultat complet après email, puis confirmation finale ; pass responsive mobile/desktop
 - Mode debug (`?debug=true`) : le panneau affiche le payload complet envoyé à `/api/analyze` ; les logs sont sanitisés (données personnelles remplacées par `[REDACTED]`) pour conformité RGPD/nLPD
-- **Analytics comportemental** : tracking PostHog (autocapture + événements métier questionnaire) et script SiteBehaviour (heatmap/session behaviour) activés pour l’optimisation UX.
-- **Région analytics** : PostHog configuré sur l’endpoint EU (`https://eu.i.posthog.com`).
+- **Analytics comportemental** : tracking via GrainQL (`https://www.grainql.com/`) et événements PostHog si `REACT_APP_POSTHOG_KEY` est défini.
+- **Région analytics** : PostHog configuré sur l’endpoint EU (`https://eu.i.posthog.com`) lorsqu’il est activé.
 - **Consentement** : activation immédiate sans bannière cookies sur ce formulaire (décision produit actuelle).
 - **Conformité RGPD/nLPD** : [docs/audit-securite-rgpd-nlpd.md](docs/audit-securite-rgpd-nlpd.md) décrit l'audit et les mesures mises en œuvre (politique de confidentialité `/politique-confidentialite`, API protégée par `X-API-Key`, logs sanitisés).
 

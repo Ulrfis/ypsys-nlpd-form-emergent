@@ -36,7 +36,7 @@ export const PrivacyPolicy = () => {
           </div>
 
           <p className="text-sm text-muted-foreground mb-8">
-            Cette politique de confidentialité a été mise à jour le 9 mars 2026 et s’applique
+            Cette politique de confidentialité a été mise à jour le 29 mars 2026 et s’applique
             aux utilisateurs du formulaire d’évaluation nLPD (ci-après : « le formulaire »)
             proposé par YPSYS. Pour les cookies et traceurs sur le site ypsys.com, voir la{' '}
             <a
@@ -71,7 +71,8 @@ export const PrivacyPolicy = () => {
                     secteur d’activité, canton (optionnel), réponses aux questions du questionnaire nLPD,
                     score de conformité, consentement au traitement et horodatage du consentement.
                     Nous collectons également des données techniques de navigation et d’usage
-                    (événements de parcours, interactions UI, pages vues) via nos outils analytics.
+                    (événements de parcours, interactions UI, pages vues) via nos outils analytics,
+                    uniquement après consentement explicite.
                   </p>
                 </section>
 
@@ -90,10 +91,13 @@ export const PrivacyPolicy = () => {
                   <h2 className="font-semibold text-foreground mb-2">4. Destinataires et transferts</h2>
                   <p>
                     Les données sont enregistrées dans une base de données hébergée par Supabase (UE/suisse selon projet).
-                    L’analyse des réponses et la génération du rapport sont effectuées via OpenAI (États-Unis) ;
-                    des garanties appropriées (clauses types ou équivalent) sont mises en œuvre pour ce transfert.
-                    Des données d’usage sont également traitées par PostHog (analytics produit) et SiteBehaviour
-                    (analyse comportementale / heatmaps), conformément à leurs politiques respectives.
+                    Les réponses du questionnaire transmises à OpenAI sont anonymisées (sans nom, prénom, email
+                    ni identifiant direct) pour générer le diagnostic. Les emails générés sont stockés dans
+                    Supabase puis transmis à Dreamlit pour l’envoi transactionnel. Les données d’usage analytics
+                    sont traitées via GrainQL (<a href="https://www.grainql.com/" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">grainql.com</a>)
+                    et, selon configuration, PostHog (hébergement UE), conformément à leurs politiques respectives.
+                    Certains sous-traitants (notamment OpenAI et Dreamlit) peuvent impliquer des transferts hors Suisse/EEE ;
+                    lorsque requis, ces transferts sont encadrés par des garanties appropriées (p. ex. SCC/DPA).
                   </p>
                 </section>
 

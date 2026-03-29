@@ -7,7 +7,7 @@ Ce document décrit le format d'envoi vers OpenAI, la réponse attendue, et le f
 ## Flux global
 
 1. **Utilisateur termine le questionnaire** → le frontend appelle `POST /api/analyze` avec **toutes** les réponses (answers + answers_detailed).
-2. **Backend** transmet le payload complet à l’assistant OpenAI (thread + message + run).
+2. **Backend** transmet à OpenAI une version **anonymisée** du payload (thread + message + run) : aucune donnée d’identité lead (nom, prénom, email) n’est envoyée au modèle.
 3. **OpenAI** renvoie un JSON (teaser, emails, textes UI, etc.). Le champ `score_100` éventuellement renvoyé par le modèle est **ignoré** pour l’affichage et le stockage : le score sur 100 est **calculé côté application** à partir de `score.normalized` (questionnaire pondéré).
 4. **Frontend** reçoit la réponse, affiche le teaser et les scores **déterministes**, puis appelle **`insertFormSubmissionAfterAnalysis`** → **INSERT** dans `form_submissions` (réponses + teaser + scores, sans email obligatoire ; `consent_marketing` reste false jusqu’à la capture lead). Les abandons après analyse sont ainsi enregistrés.
 5. **Utilisateur remplit le formulaire de capture** (email, nom, etc.) → le frontend appelle **`finalizeFormSubmissionLead(submissionId, …)`** si une ligne existe, sinon **`saveSubmission`** (insert complet de secours, ex. session rechargée).
@@ -21,19 +21,19 @@ L’envoi OpenAI **transite donc par l’app** (backend proxy) ; les deux répon
 
 ## Requête `POST /api/analyze`
 
-Le backend envoie à OpenAI **l’intégralité** du payload (pas de résumé). Format attendu :
+Le backend reçoit le payload applicatif puis envoie à OpenAI uniquement la version anonymisée (pas de résumé) :
 
 ```json
 {
   "payload": {
     "user": {
-      "first_name": "string",
-      "last_name": "string",
-      "email": "string | null",
-      "company": "string",
-      "size": "string | null",
-      "industry": "string | null",
-      "canton": "string | null"
+      "first_name": "Utilisateur",
+      "last_name": "",
+      "email": null,
+      "company": "Votre organisation",
+      "size": null,
+      "industry": null,
+      "canton": null
     },
     "answers": {
       "q1": "Libellé de la réponse choisie",
@@ -59,6 +59,7 @@ Le backend envoie à OpenAI **l’intégralité** du payload (pas de résumé). 
 
 - **answers** : toutes les réponses (q1..q15) avec le libellé de l’option choisie.
 - **answers_detailed** : optionnel ; chaque entrée contient l’énoncé de la question et la réponse, pour que l’assistant ait le contexte sans dépendre uniquement du vector store.
+- **Anonymisation forcée backend** : même si un client envoie des champs utilisateur non anonymes, le backend les remplace avant l’appel OpenAI.
 
 L’assistant a le questionnaire dans son vector store ; envoyer **answers** + **answers_detailed** garantit une analyse détaillée et des conseils personnalisés.
 
