@@ -3,7 +3,7 @@
 **Status**: 🟢 Complete
 **Creator**: Memoways / Emergent AI
 **Started**: 2026-01-27
-**Last Updated**: 2026-03-28 (Supabase insert post-analyse + RLS UPDATE, score déterministe app/API, prompt v4, TidyCal embed, doc tests assistant)
+**Last Updated**: 2026-04-07 (ResultsPreview copy 07/04/26, micro-copy FR, debug Supabase RPC finalize_submission_lead + status_check)
 
 ---
 
@@ -490,6 +490,44 @@ Mettre à jour le questionnaire selon les indications données dans le document 
 **Resolution**: policy UPDATE idempotente documentée ; source de vérité score = questionnaire ; prompt v4 rappelle d’utiliser `round(normalized×10)` dans les textes.
 
 **Time**: ~1 session (impl + doc)
+
+---
+
+### 2026-04-07 — Ajustements copy UI + résolution incident Supabase lead 🔷
+
+**Intent**: Appliquer le brief copy du 07/04/26 sur l'écran post-questionnaire, améliorer la micro-copy FR, et résoudre l'échec de finalisation lead observé en production (console Supabase).
+
+**Tool**: Cursor + SQL Editor Supabase (production)
+
+**Outcome**:
+- **ResultsPreview** :
+  - suppression du bloc `Votre rapport détaillé révèle` + `Score : x/100` dans l'encadré intermédiaire,
+  - remplacement par le texte métier demandé : `non-conformité nLPD`, `risque opérationnel`, `exposition financière potentielle jusqu'à CHF 250'000`,
+  - conservation stricte du bloc `Vous allez obtenir`.
+- **Micro-copy FR** : corrections de lisibilité/typographie (accents, espaces avant `:`, formulations) dans `ResultsPreview`.
+- **Supabase prod** :
+  - diagnostic des erreurs console de fin de flow (`23514 form_submissions_status_check`),
+  - vérification de la contrainte status et des fonctions `finalize_submission_lead`,
+  - suppression/recréation de la RPC `public.finalize_submission_lead` avec la signature réellement appelée par le frontend (incluant `p_session_id` et champs consentements),
+  - résolution du conflit PostgreSQL `42P13` (param defaults) via `DROP FUNCTION` puis `CREATE FUNCTION`,
+  - alignement du `status` mis à jour par la RPC sur une valeur compatible contrainte (`teaser_ready`).
+
+**Friction**:
+- confusion initiale entre symptôme analytics (PostHog) et incident principal DB,
+- divergence entre signature RPC attendue côté frontend et fonction existante côté base,
+- erreur de migration SQL PostgreSQL empêchant l'override direct de la fonction.
+
+**Resolution**:
+- approche guidée par preuves (console navigateur + requêtes SQL ciblées),
+- séquencement sûr `inspect -> drop -> recreate -> grant -> verify signature`,
+- validation finale de présence de la fonction en schéma `public`.
+
+**What you learned**:
+- un incident analytics apparent peut masquer un incident transactionnel DB plus critique,
+- sur Supabase/Postgres, une RPC modifiée avec defaults requiert souvent un `DROP FUNCTION` avant recréation,
+- garder la signature RPC strictement alignée avec l'appel frontend évite les erreurs silencieuses de finalisation lead.
+
+**Time**: ~1 session (UI copy + debug prod + correction SQL)
 
 ---
 
