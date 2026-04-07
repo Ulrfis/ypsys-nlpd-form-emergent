@@ -9,14 +9,11 @@ import {
 import { LeadCaptureForm } from '@/components/LeadCaptureForm';
 
 export const ResultsPreview = ({
-  score100,
   prefilledEmail,
   isLoading,
   onSubmitLead,
   onSendPrefilledReport,
 }) => {
-  const safeScore = Math.min(Math.max(Math.round(score100 ?? 0), 0), 100);
-
   return (
     <div className="min-h-screen bg-gradient-hero py-4 sm:py-12 w-full max-w-[100vw] overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-[100vw]">
@@ -40,7 +37,7 @@ export const ResultsPreview = ({
               Votre analyse est terminée
             </h1>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Découvrez vos axes prioritaires : Nous avons évalué 15 critères de conformité nLPD.
+              Découvrez vos axes prioritaires : nous avons évalué 15 critères de conformité nLPD.
               Des failles ont été détectées dans votre infrastructure.
             </p>
           </div>
@@ -52,11 +49,11 @@ export const ResultsPreview = ({
                   <FileText className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-semibold mb-1 text-foreground">
-                    Votre rapport détaillé révèle :
-                  </h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-primary">
-                    Score : {safeScore}/100
+                  <p className="text-sm sm:text-base text-foreground/90 leading-relaxed">
+                    Nous avons détecté des problèmes de : non-conformité nLPD, risque
+                    opérationnel, exposition financière potentielle jusqu&apos;à CHF 250&apos;000.
+                    Découvrez quelles failles, lesquelles sont critiques, et ce qu&apos;elles vous
+                    coûtent si rien ne change.
                   </p>
                 </div>
               </div>
@@ -70,10 +67,10 @@ export const ResultsPreview = ({
               </h3>
               <div className="space-y-2 sm:space-y-3">
                 {[
-                  "Votre score de conformité /100: Etes-vous a 25/100 ou 85/100 ?",
-                  "Vos failles identifiées par priorité: lesquelles sont critiques, urgentes, moyennes ?",
-                  "L'impact financier estimé: combien peut coûter une non-conformité lors d'un contrôle ?",
-                  "Une analyse de votre situation et des propositions d'amélioration: que faire en priorité ?",
+                  "Votre score de conformité /100 : êtes-vous à 25/100 ou à 85/100 ?",
+                  "Vos failles identifiées par priorité : lesquelles sont critiques, urgentes ou moyennes ?",
+                  "L'impact financier estimé : combien peut coûter une non-conformité lors d'un contrôle ?",
+                  "Une analyse de votre situation et des propositions d'amélioration : que faire en priorité ?",
                 ].map((item, index) => (
                   <motion.div
                     key={index}
